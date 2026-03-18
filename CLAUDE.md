@@ -481,6 +481,7 @@ Die Loader-Funktion muss nach dem Modulnamen benannt werden, wobei `-` durch `_`
 | 100004 | Spirit | C++/Lua |
 | 100005 | Stamina | C++/Lua |
 | 100016-100026 | Haste, ArmorPen, SP, Crit, MountSpeed, ManaReg, Hit, Block, Expertise, Parry, Dodge | C++ |
+| 100027 | Life Leech (heals % of damage dealt) | C++/Lua |
 
 ### Bekannte Probleme
 
