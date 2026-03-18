@@ -65,9 +65,9 @@ Vollständige Analyse aller 5 Repositories durchgeführt:
 ### Hohe Priorität
 
 - [x] **mod-paragon: Schema-Mismatch beheben** — `character_paragon_points` SQL erweitern auf 16 Spalten ✅ (Umgesetzt: Alle 16 Spalten in `character_paragon_points_create.sql` vorhanden)
-- [ ] **mod-paragon: NPC-Script registrieren** — `AddMyNPCScripts()` in `Paragon_loader.cpp` aufrufen
-- [ ] **mod-paragon: Parry/Dodge Reihenfolge fixen** — Parameter-Reihenfolge in `ApplyParagonStatEffects()` korrigieren (Zeile 144)
-- [ ] **mod-paragon: Punkt-Reset vervollständigen** — `ResetParagonPoints()` muss alle 16 Stats zurücksetzen
+- [x] **mod-paragon: NPC-Script registrieren** — `AddMyNPCScripts()` in `Paragon_loader.cpp` aufrufen ✅
+- [x] **mod-paragon: Parry/Dodge Reihenfolge** — Kein Bug, Reihenfolge stimmt überein ✅ (kein Fix nötig)
+- [x] **mod-paragon: Punkt-Reset vervollständigen** — `ResetParagonPoints()` auf alle 16 Stats erweitert ✅
 
 ### Mittlere Priorität
 
@@ -82,7 +82,7 @@ Vollständige Analyse aller 5 Repositories durchgeführt:
 - [ ] **mod-paragon: Code-Duplikation reduzieren** — 16 identische RemoveAura/AddAura Blöcke in datengesteuerte Schleife umwandeln
 - [ ] **mod-paragon: In-Memory Caching** — Paragon Level/Points im Player-Data cachen statt bei jedem Map-Change DB abfragen
 - [ ] **mod-paragon: Max Level Cap** — Konfigurierbares Maximum für Paragon Level
-- [ ] **mod-paragon: XP Overflow Fix** — `pow(1.1, level-1)` Overflow bei hohen Levels verhindern
+- [x] **mod-paragon: XP Overflow Fix** — `pow(1.1, level-1)` Overflow bei hohen Levels verhindern ✅
 - [ ] **mod-paragon-itemgen: AH Restriction** — Auction House Hook fehlt im Core
 - [ ] **mod-paragon-itemgen: PROP_ENCHANTMENT_SLOT Konflikt** — Items mit Random Properties ("of the Bear") werden überschrieben
 
