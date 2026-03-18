@@ -58,6 +58,20 @@ Vollständige Analyse aller 5 Repositories durchgeführt:
 - Zuvor nur README.md ("# share-public")
 - Jetzt zentrale Dokumentations-Hub
 
+#### [mod-paragon] Phase 3: Architektur-Verbesserungen
+
+- **Zeitstempel**: 2026-03-18
+- **Repo**: mod-paragon
+- **Änderungen**:
+  - **3.1 Konfiguration aktivieren**: Neuer `ParagonConfig` WorldScript mit `OnAfterConfigLoad`-Hook. 30+ Konfigurations-Optionen werden aus `mod_paragon.conf` geladen (Enable, Aura-IDs, XP-Belohnungen, PPL, MaxLevel, PartyReduce). Alle hardcodierten Werte durch `conf_*` Variablen ersetzt.
+  - **3.2 Aura-IDs vereinheitlicht**: `AURA_STRENGTH` von `7507` auf `100001` geändert. C++ und Lua verwenden jetzt identische Aura-IDs für alle 16 Stats. Config-Datei entsprechend aktualisiert.
+  - **3.3 Code-Duplikation eliminiert**: 32 identische `RemoveAura`/`AddAura`/`SetAuraStack` Zeilen durch datengesteuerte Schleife ersetzt. `RefreshParagonAura()` verwendet jetzt `conf_AuraIds[16]` Array + `for`-Schleife. Signatur vereinfacht auf `(Player*, uint32 const[16])`.
+  - **3.4 In-Memory Caching**: `std::unordered_map<uint32, ParagonCache>` mit Mutex-Schutz. Cache wird bei Login befüllt, bei XP-Gewinn/Level-Up aktualisiert, bei Logout invalidiert. `OnPlayerMapChanged` liest aus Cache statt DB-Query. `IncreaseParagonXP` nutzt Cache als primäre Datenquelle.
+  - **3.5 Max Level Cap**: Neue Config-Option `Paragon.MaxLevel` (Default: 0 = kein Limit). Level-Up wird verhindert wenn `paragonLevel >= maxLevel`. XP-Gewinn wird komplett gestoppt wenn Cap erreicht.
+  - **Bonus**: Ungenutzte Lua-Includes entfernt (`lua.h`, `lauxlib.h`, `LuaEngine.h`), ungenutztes `debug`-Flag entfernt, `RegisterParagonEluna` Declaration entfernt, `SetAuraStack` durch sichereres `GetAura()->SetStackAmount()` ersetzt.
+- **Betroffene Dateien**: `src/ParagonPlayer.cpp`, `src/ParagonUtils.h`, `conf/mod_paragon.conf.dist`
+- **Branch**: `claude/review-share-public-todos-a2euu`
+
 ---
 
 ## Offene Pläne und TODOs
@@ -71,17 +85,17 @@ Vollständige Analyse aller 5 Repositories durchgeführt:
 
 ### Mittlere Priorität
 
-- [ ] **mod-paragon: Konfiguration aktivieren** — `sConfigMgr->GetOption<>()` für alle hardcodierten Werte einbauen
-- [ ] **mod-paragon: C++ und Lua Aura-IDs vereinheitlichen** — Strength: 7507 (C++) vs 100001 (Lua) Konflikt lösen
+- [x] **mod-paragon: Konfiguration aktivieren** — `sConfigMgr->GetOption<>()` für alle hardcodierten Werte eingebaut ✅ (WorldScript `ParagonConfig::OnAfterConfigLoad`, 30+ Config-Optionen)
+- [x] **mod-paragon: C++ und Lua Aura-IDs vereinheitlichen** — AURA_STRENGTH von 7507 auf 100001 geändert, alle IDs jetzt konsistent mit Lua-System ✅
 - [x] **mod-paragon: Prepared Statements** — 13 Queries auf CharacterDatabasePreparedStatement umgestellt ✅
 - [x] **mod-paragon-itemgen: Prepared Statements** — 14 Queries auf Prepared Statements umgestellt (Character + World DB) ✅
 - [ ] **mod-paragon-itemgen: Combat Rating Pool Split** — DPS Pool in Melee/Caster aufteilen
 
 ### Niedrige Priorität / Verbesserungen
 
-- [ ] **mod-paragon: Code-Duplikation reduzieren** — 16 identische RemoveAura/AddAura Blöcke in datengesteuerte Schleife umwandeln
-- [ ] **mod-paragon: In-Memory Caching** — Paragon Level/Points im Player-Data cachen statt bei jedem Map-Change DB abfragen
-- [ ] **mod-paragon: Max Level Cap** — Konfigurierbares Maximum für Paragon Level
+- [x] **mod-paragon: Code-Duplikation reduzieren** — 16 identische RemoveAura/AddAura Blöcke durch datengesteuerte Schleife ersetzt ✅ (Array `conf_AuraIds[16]` + `for`-Schleife in `RefreshParagonAura`)
+- [x] **mod-paragon: In-Memory Caching** — Paragon Level/XP in `std::unordered_map<uint32, ParagonCache>` gecacht, Map-Change liest aus Cache statt DB ✅
+- [x] **mod-paragon: Max Level Cap** — Konfigurierbares `Paragon.MaxLevel` (Default: 0 = kein Limit) ✅
 - [x] **mod-paragon: XP Overflow Fix** — `pow(1.1, level-1)` Overflow bei hohen Levels verhindern ✅
 - [ ] **mod-paragon-itemgen: AH Restriction** — Auction House Hook fehlt im Core
 - [ ] **mod-paragon-itemgen: PROP_ENCHANTMENT_SLOT Konflikt** — Items mit Random Properties ("of the Bear") werden überschrieben
