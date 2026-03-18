@@ -87,6 +87,40 @@ Vollständige Analyse aller 5 Repositories durchgeführt:
 
 ## Offene Pläne und TODOs
 
+#### [azerothcore-wotlk] Spell.dbc Korruption behoben + Validierung eingebaut
+
+- **Zeitstempel**: 2026-03-18
+- **Repo**: azerothcore-wotlk, ac-share
+- **Ursache der Korruption**:
+  - Die `Spell.dbc` in `azerothcore-wotlk/share/dbc/` war schwer beschädigt:
+    - 34.658 doppelte Spell-IDs bei 49.880 Records (nur 15.222 einzigartig)
+    - Dateigröße 2.234 Bytes zu klein gegenüber dem Header
+    - String-Table korrupt (kein Null-Byte am Anfang)
+    - Ungültige IDs wie 131073, 720897 — typisch für verschobene Daten
+  - Ursache: `read_dbc()` in `copy_spells_dbc.py` speicherte Records in einem dict nach Spell-ID. Duplikate überschrieben sich gegenseitig — ein erneuter Lauf verschlimmerte die Korruption
+- **Änderungen**:
+  - **Spell.dbc wiederhergestellt** aus sauberem Backup (`ac-share/data/dbc/Spell.dbc`)
+  - **Danach**: User hat aktuelle Spell.dbc mit allen Custom Spells nach `ac-share/data/dbc/Spell.dbc` hochgeladen (Commit `6238199`)
+  - **Spell.dbc nach `azerothcore-wotlk/share/dbc/` kopiert** (diese Sitzung)
+  - **6 Schutzmaßnahmen in `copy_spells_dbc.py`** eingebaut:
+    1. Dateigröße vs. Header-Validierung
+    2. String-Table Null-Byte-Prüfung
+    3. Duplikat-Erkennung (bricht bei korrupter Eingabe ab)
+    4. Format-String vs. Record-Size Konsistenzprüfung
+    5. Source == Target Schutz (verhindert Selbst-Überschreibung)
+    6. Post-Write Verifikation
+- **Verifizierung der neuen Spell.dbc**:
+  - 49.880 Records, alle unique (0 Duplikate)
+  - Dateigröße 49.008.266 Bytes (stimmt mit Header überein)
+  - String Table OK (beginnt mit Null-Byte)
+  - 17 Custom 900xxx Spells (900100-900116) vorhanden
+  - 17 Custom 100xxx Spells (100000-100026) vorhanden
+- **Betroffene Dateien**: `share/dbc/Spell.dbc`, `share/copy_spells_dbc.py`
+- **Commit (alte Sitzung)**: `2c7c070` (PR #9, gemergt)
+- **Branch**: `claude/fix-spell-dbc-corruption-CQPsh` (alte Sitzung), `claude/fix-spell-dbc-corruption-CuZz4` (diese Sitzung)
+
+---
+
 ### Hohe Priorität
 
 - [x] **mod-paragon: Schema-Mismatch beheben** — `character_paragon_points` SQL erweitern auf 16 Spalten ✅ (Umgesetzt: Alle 16 Spalten in `character_paragon_points_create.sql` vorhanden)
