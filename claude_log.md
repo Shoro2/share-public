@@ -8,6 +8,28 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ### 2026-03-18
 
+#### [mod-paragon, azerothcore-wotlk] Feature: Life Leech Stat
+
+- **Zeitstempel**: 2026-03-18
+- **Repos**: mod-paragon, azerothcore-wotlk
+- **Änderungen**:
+  - Neuer 17. Paragon-Stat: **Life Leech** (Aura ID 100027)
+  - Heilt den Spieler für einen konfigurierbaren Prozentsatz des verursachten Schadens (Standard: 0.5% pro Stack)
+  - Implementiert via performantem `UnitScript::OnDamage` Hook (Option B) statt Proc-System
+  - `ParagonPlayer.cpp`: STAT_COUNT 16→17, neues conf_AuraIds[16], ParagonLifeLeech UnitScript-Klasse
+  - `CharacterDatabase.cpp`: Prepared Statements um `plifeleech` Spalte erweitert (SEL, INS, RESET)
+  - `character_paragon_points_create.sql`: Neue Spalte `plifeleech`
+  - `mod_paragon.conf.dist`: `Paragon.IdLifeLeech = 100027`, `Paragon.LifeLeechPct = 0.5`
+  - `Paragon_Data.lua`: Stat-Definition id=17, Kategorie Offensive, DB-Column-Order erweitert
+  - Migration-SQL: `ALTER TABLE` für bestehende DBs
+- **Betroffene Dateien**:
+  - `mod-paragon/src/ParagonPlayer.cpp`
+  - `mod-paragon/conf/mod_paragon.conf.dist`
+  - `mod-paragon/data/sql/db-characters/base/character_paragon_points_create.sql`
+  - `mod-paragon/data/sql/db-characters/updates/add_plifeleech_column.sql`
+  - `mod-paragon/Paragon_System_LUA/Paragon_Data.lua`
+  - `azerothcore-wotlk/src/server/database/Database/Implementation/CharacterDatabase.cpp`
+
 #### [mod-paragon] Feature: Shift+Click für 10 Punkte auf einmal
 
 - **Zeitstempel**: 2026-03-18
