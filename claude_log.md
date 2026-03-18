@@ -64,10 +64,10 @@ Vollständige Analyse aller 5 Repositories durchgeführt:
 
 ### Hohe Priorität
 
-- [ ] **mod-paragon: Schema-Mismatch beheben** — `character_paragon_points` SQL erweitern auf 16 Spalten (phaste, parmpen, pspellpower, pcrit, pmspeed, pmreg, phit, pblock, pexpertise, pparry, pdodge)
-- [ ] **mod-paragon: NPC-Script registrieren** — `AddMyNPCScripts()` in `Paragon_loader.cpp` aufrufen
-- [ ] **mod-paragon: Parry/Dodge Reihenfolge fixen** — Parameter-Reihenfolge in `ApplyParagonStatEffects()` korrigieren (Zeile 144)
-- [ ] **mod-paragon: Punkt-Reset vervollständigen** — `ResetParagonPoints()` muss alle 16 Stats zurücksetzen
+- [x] **mod-paragon: Schema-Mismatch beheben** — `character_paragon_points` SQL erweitern auf 16 Spalten ✅ (Umgesetzt: Alle 16 Spalten in `character_paragon_points_create.sql` vorhanden)
+- [x] **mod-paragon: NPC-Script registrieren** — `AddMyNPCScripts()` in `Paragon_loader.cpp` aufrufen ✅
+- [x] **mod-paragon: Parry/Dodge Reihenfolge** — Kein Bug, Reihenfolge stimmt überein ✅ (kein Fix nötig)
+- [x] **mod-paragon: Punkt-Reset vervollständigen** — `ResetParagonPoints()` auf alle 16 Stats erweitert ✅
 
 ### Mittlere Priorität
 
@@ -82,9 +82,193 @@ Vollständige Analyse aller 5 Repositories durchgeführt:
 - [ ] **mod-paragon: Code-Duplikation reduzieren** — 16 identische RemoveAura/AddAura Blöcke in datengesteuerte Schleife umwandeln
 - [ ] **mod-paragon: In-Memory Caching** — Paragon Level/Points im Player-Data cachen statt bei jedem Map-Change DB abfragen
 - [ ] **mod-paragon: Max Level Cap** — Konfigurierbares Maximum für Paragon Level
-- [ ] **mod-paragon: XP Overflow Fix** — `pow(1.1, level-1)` Overflow bei hohen Levels verhindern
+- [x] **mod-paragon: XP Overflow Fix** — `pow(1.1, level-1)` Overflow bei hohen Levels verhindern ✅
 - [ ] **mod-paragon-itemgen: AH Restriction** — Auction House Hook fehlt im Core
 - [ ] **mod-paragon-itemgen: PROP_ENCHANTMENT_SLOT Konflikt** — Items mit Random Properties ("of the Bear") werden überschrieben
+
+---
+
+## Implementierungsplan (Stand: 2026-03-18)
+
+Die offenen TODOs werden in 4 Phasen umgesetzt. Die Reihenfolge folgt dem Prinzip: **erst kritische Bugs fixen, dann Sicherheit, dann Architektur, dann Extras**.
+
+---
+
+### Phase 1: Kritische Bugfixes (mod-paragon)
+
+Direkte Gameplay-Auswirkungen. Kleine, gezielte Änderungen mit sofortigem Effekt.
+
+#### 1.1 NPC-Script registrieren
+- **Datei**: `mod-paragon/src/Paragon_loader.cpp`
+- **Aufwand**: 2 Zeilen
+- **Änderung**: Forward Declaration `void AddMyNPCScripts();` hinzufügen und `AddMyNPCScripts();` in `Addmod_paragonScripts()` aufrufen
+- **Test**: NPC 900100 im Spiel ansprechen → Gossip-Menü muss erscheinen
+
+#### 1.2 Parry/Dodge Reihenfolge fixen
+- **Datei**: `mod-paragon/src/ParagonPlayer.cpp`, Zeile 143
+- **Aufwand**: 1 Zeile
+- **Änderung**: Aufruf von `RefreshParagonAura()` korrigieren — `pdodge, pparry` zu `pparry, pdodge` tauschen (passend zur Funktionssignatur)
+- **Test**: Punkte in Parry/Dodge investieren → korrekte Aura-Stacks prüfen (`.aura 100025` / `.aura 100026`)
+
+#### 1.3 Punkt-Reset vervollständigen
+- **Datei**: `mod-paragon/src/ParagonNPC.cpp`, Zeile 53
+- **Aufwand**: 1 Zeile (SQL erweitern)
+- **Änderung**: UPDATE-Statement auf alle 16 Spalten erweitern:
+  ```sql
+  UPDATE character_paragon_points SET pstrength=0, pintellect=0, pagility=0, pspirit=0, pstamina=0,
+  phaste=0, parmpen=0, pspellpower=0, pcrit=0, pmspeed=0, pmreg=0, phit=0, pblock=0,
+  pexpertise=0, pparry=0, pdodge=0 WHERE characterID = '{}'
+  ```
+- **Test**: Punkte verteilen → Reset → alle Stats müssen 0 sein, Punkte als Items zurück
+
+#### 1.4 XP Overflow Fix
+- **Datei**: `mod-paragon/src/ParagonPlayer.cpp`, Zeile 348-349
+- **Aufwand**: ~5 Zeilen
+- **Änderung**:
+  - `newXP` als `int64` statt `uint32` deklarieren
+  - `pow(1.1, level-1)` Ergebnis mit `std::min()` cappen (z.B. auf `INT32_MAX`)
+  - Overflow-Check korrekt formulieren (`if (newXP < 0) newXP = 0;`)
+- **Test**: Charakter auf Level 100+ testen → kein Crash/Wrap-Around
+
+---
+
+### Phase 2: Sicherheit — Prepared Statements
+
+SQL-Injection-Risiko eliminieren. Systematisch pro Modul.
+
+#### 2.1 mod-paragon: Prepared Statements
+- **Dateien**:
+  - `mod-paragon/src/ParagonPlayer.cpp` (12 Queries)
+  - `mod-paragon/src/ParagonNPC.cpp` (1 Query)
+  - Neue Datei: `mod-paragon/src/ParagonDatabaseStatements.h` (Statement-Enum + Definitionen)
+- **Aufwand**: ~80 Zeilen
+- **Vorgehen**:
+  1. Enum `ParagonDatabaseStatements` definieren (z.B. `PARAGON_SEL_POINTS`, `PARAGON_UPD_POINTS`, etc.)
+  2. Statements in `CharacterDatabaseConnection::DoPrepareStatements()` registrieren — oder alternativ eigene Init-Funktion im `OnStartup`-Hook
+  3. Alle `.Query("SELECT ...")`/`.Execute("UPDATE ...")` durch `PreparedStatement` ersetzen
+- **Test**: Alle bestehenden Funktionen müssen weiterhin korrekt funktionieren
+
+#### 2.2 mod-paragon-itemgen: Prepared Statements
+- **Dateien**:
+  - `mod-paragon-itemgen/src/ParagonItemGen.cpp` (8 Queries)
+  - `mod-paragon-itemgen/src/ParagonItemGenCommands.cpp` (Queries prüfen)
+  - `mod-paragon-itemgen/src/ParagonItemGenNPC.cpp` (Queries prüfen)
+- **Aufwand**: ~60 Zeilen
+- **Vorgehen**: Analog zu 2.1
+
+---
+
+### Phase 3: Architektur-Verbesserungen (mod-paragon)
+
+Wartbarkeit und Korrektheit verbessern. Jeder Punkt ist unabhängig umsetzbar.
+
+#### 3.1 Konfiguration aktivieren
+- **Dateien**:
+  - `mod-paragon/src/ParagonPlayer.cpp` (Hauptänderung)
+  - `mod-paragon/conf/mod_paragon.conf.dist` (erweitern um fehlende Optionen: Haste/ArmorPen/SP/Crit/MSpeed/MReg/Hit/Block/Expertise/Parry/Dodge Aura-IDs)
+- **Aufwand**: ~40 Zeilen
+- **Änderung**:
+  - Statische Variablen für Config-Werte anlegen (z.B. `static uint32 CONF_AURA_STRENGTH;`)
+  - Im `OnStartup`- oder `OnAfterConfigLoad`-Hook alle Werte via `sConfigMgr->GetOption<uint32>("Paragon.IdStr", 7507)` laden
+  - Hardcodierte Werte durch Config-Variablen ersetzen
+- **Test**: Config-Werte ändern → Server neu starten → geänderte Werte aktiv
+
+#### 3.2 C++/Lua Aura-IDs vereinheitlichen
+- **Dateien**:
+  - `mod-paragon/src/ParagonPlayer.cpp`, Zeile 21 (`AURA_STRENGTH = 7507`)
+  - `mod-paragon/Paragon_System_LUA/Paragon_Data.lua`, Zeile 49 (`auraId = 100001`)
+- **Aufwand**: 1 Zeile + DBC-Prüfung
+- **Entscheidung nötig**: Welche ID ist korrekt?
+  - **Option A**: C++ auf `100001` ändern (konsistent mit Lua und dem `100xxx` Schema) — erfordert DBC-Eintrag für Spell 100001
+  - **Option B**: Lua auf `7507` ändern — nur wenn Spell 7507 Strength-Aura korrekt abbildet
+  - **Empfehlung**: Option A (100001), da alle anderen Stats bereits `100xxx` folgen
+- **Test**: Strength-Punkte vergeben → Aura muss auf dem Charakter sichtbar sein und korrekt wirken
+
+#### 3.3 Code-Duplikation reduzieren
+- **Datei**: `mod-paragon/src/ParagonPlayer.cpp`, Zeilen 44-95
+- **Aufwand**: ~30 Zeilen (16×3 Zeilen → 1 Schleife)
+- **Änderung**:
+  ```cpp
+  struct ParagonStatMapping {
+      uint32 auraId;
+      uint8 value;
+  };
+  // Array befüllen, dann:
+  for (auto const& stat : statMappings) {
+      player->RemoveAura(stat.auraId);
+      if (stat.value > 0) {
+          player->AddAura(stat.auraId, player);
+          if (Aura* aura = player->GetAura(stat.auraId))
+              aura->SetStackAmount(stat.value);
+      }
+  }
+  ```
+- **Test**: Punkte verteilen → alle Auras korrekt angewendet
+
+#### 3.4 In-Memory Caching
+- **Dateien**:
+  - `mod-paragon/src/ParagonPlayer.cpp`
+  - Ggf. neuer Header `ParagonPlayerData.h`
+- **Aufwand**: ~50 Zeilen
+- **Änderung**:
+  - `std::unordered_map<uint32, ParagonData>` als Cache (accountId → {level, xp})
+  - Cache befüllen bei Login, aktualisieren bei XP-Gewinn/Level-Up
+  - Cache invalidieren bei Logout
+  - Map-Change liest aus Cache statt DB
+- **Test**: Häufige Map-Changes → keine DB-Queries in Logs für Paragon-Abfragen
+
+#### 3.5 Max Level Cap
+- **Dateien**:
+  - `mod-paragon/src/ParagonPlayer.cpp` (Level-Up-Logik)
+  - `mod-paragon/conf/mod_paragon.conf.dist` (neue Option `Paragon.MaxLevel`)
+- **Aufwand**: ~10 Zeilen
+- **Änderung**:
+  - Config-Option `Paragon.MaxLevel` (Default: 0 = kein Limit)
+  - Vor Level-Up prüfen: `if (maxLevel > 0 && currentLevel >= maxLevel) { /* XP überschuss verwerfen oder cappen */ }`
+- **Test**: MaxLevel auf 10 setzen → ab Level 10 kein weiterer Aufstieg
+
+---
+
+### Phase 4: Verbesserungen (mod-paragon-itemgen)
+
+Gameplay-Verbesserungen, nicht sicherheitskritisch.
+
+#### 4.1 Combat Rating Pool Split
+- **Datei**: `mod-paragon-itemgen/src/ParagonItemGen.cpp`, Zeilen 120-125
+- **Aufwand**: ~20 Zeilen
+- **Änderung**:
+  - DPS-Pool aufteilen in `MELEE_DPS_COMBAT_RATINGS` (Crit, Haste, Hit, ArmorPen, Expertise, AP) und `CASTER_DPS_COMBAT_RATINGS` (Crit, Haste, Hit, SP, ManaRegen)
+  - Pool-Auswahl basierend auf `mainStat`: Strength/Agility → Melee, Intellect/Spirit → Caster
+- **Test**: Melee-Char darf kein Spell Power rollen, Caster kein Armor Penetration
+
+#### 4.2 PROP_ENCHANTMENT_SLOT Konflikt
+- **Datei**: `mod-paragon-itemgen/src/ParagonItemGen.cpp`
+- **Aufwand**: ~10 Zeilen
+- **Änderung**:
+  - Vor Enchantment-Anwendung prüfen ob Item bereits Random Properties hat (`item->GetItemRandomPropertyId() != 0`)
+  - Entweder: Items mit Random Properties überspringen, oder bewusst überschreiben mit Log-Meldung
+  - **Empfehlung**: Überschreiben (Paragon-Stats sind wertvoller als "of the Bear"), aber mit Chat-Hinweis an den Spieler
+- **Test**: Item mit "of the Bear" durch Paragon-System laufen lassen → Enchantments korrekt
+
+#### 4.3 AH Restriction
+- **Status**: **BLOCKIERT** — AzerothCore hat keinen `CanListAuction`-Hook
+- **Optionen**:
+  - **Option A**: Core-Patch für `CanListAuction`-Hook in `azerothcore-wotlk` (aufwändig, Fork-spezifisch)
+  - **Option B**: Workaround — alle Paragon-Items automatisch Soulbound machen (einfach, aber einschränkend)
+  - **Option C**: Akzeptieren — Cursed Items sind bereits Soulbound, normale Paragon-Items können gehandelt werden
+  - **Empfehlung**: Option C vorerst, Option A nur bei tatsächlichem Bedarf
+- **Aufwand**: Option A: ~50 Zeilen Core-Patch + Hook-Implementation | Option C: 0
+
+---
+
+### Zusammenfassung der Reihenfolge
+
+| Phase | Punkte | Aufwand (geschätzt) | Abhängigkeiten |
+|-------|--------|---------------------|----------------|
+| **1: Bugfixes** | 1.1–1.4 | Klein (je 1-5 Zeilen) | Keine — sofort umsetzbar |
+| **2: Sicherheit** | 2.1–2.2 | Mittel (~140 Zeilen) | Keine |
+| **3: Architektur** | 3.1–3.5 | Mittel (~130 Zeilen) | 3.2 nach Entscheidung Aura-ID, 3.5 nach 3.1 (Config) |
+| **4: Extras** | 4.1–4.3 | Klein-Mittel | 4.3 blockiert durch Core |
 
 ---
 
