@@ -178,24 +178,93 @@ class spell_custom_bloody_whirlwind_passive : public AuraScript
         SpellInfo const* spellInfo = eventInfo.GetSpellInfo();
         if (!spellInfo)
             return false;
-        // Nur bei Bloodthirst (Warrior SpellFamily 4, Flag 0x40000000)
+        // Nur bei Bloodthirst (Warrior SpellFamily 4, Flags[1]=0x00000400)
         return spellInfo->SpellFamilyName == 4
-            && (spellInfo->SpellFamilyFlags[0] & 0x40000000);
+            && (spellInfo->SpellFamilyFlags[1] & 0x00000400);
     }
 
-    void OnProc(AuraEffect const* /*aurEff*/, ProcEventInfo& eventInfo)
+    void HandleProc(AuraEffect const* /*aurEff*/, ProcEventInfo& /*eventInfo*/)
     {
+        PreventDefaultAction();
         GetTarget()->CastSpell(GetTarget(), 900115, true);
     }
 
     void Register() override
     {
         DoCheckProc += AuraCheckProcFn(spell_custom_bloody_whirlwind_passive::CheckProc);
-        OnEffectProc += AuraEffectProcFn(spell_custom_bloody_whirlwind_passive::OnProc,
-            EFFECT_0, SPELL_AURA_DUMMY);
+        OnEffectProc += AuraEffectProcFn(spell_custom_bloody_whirlwind_passive::HandleProc,
+            EFFECT_1, SPELL_AURA_PROC_TRIGGER_SPELL);
     }
 };
 ```
+
+### AzerothCore Proc-System: Ablauf und Fallstricke
+
+#### Proc-Kette (vollständiger Ablauf)
+
+```
+Spell trifft Ziel (z.B. Bloodthirst Hit)
+    ↓
+ProcSkillsAndAuras() → TriggerAurasProcOnEvent()
+    ↓
+GetProcAurasTriggeredOnEvent() iteriert ALLE applied Auras
+    ↓
+Für jede Aura: GetProcEffectMask()
+    ├─ 1. spell_proc Eintrag vorhanden? (Nein → return 0)
+    ├─ 2. Triggered-Spell Check (IsTriggered() → blockiert wenn kein SPELL_ATTR3_CAN_PROC_FROM_PROCS)
+    ├─ 3. CanSpellTriggerProcOnEvent()
+    │     ├─ ProcFlags Match (z.B. 0x10 = DONE_SPELL_MELEE_DMG_CLASS)
+    │     ├─ SpellFamilyName/Mask (spell_proc Tabelle, NICHT DBC EffectSpellClassMask!)
+    │     ├─ SpellTypeMask (DAMAGE=1, HEAL=2, NO_DMG_HEAL=4)
+    │     ├─ SpellPhaseMask (HIT=2, CAST=1, FINISH=4)
+    │     └─ HitMask (Default: NORMAL|CRITICAL|ABSORB)
+    ├─ 4. CallScriptCheckProcHandlers() ← Dein CheckProc()
+    ├─ 5. CheckEffectProc() pro Effekt
+    └─ 6. Chance Roll (100 = immer)
+    ↓
+TriggerProcOnEvent()
+    ├─ CallScriptProcHandlers() ← Dein HandleProc() + PreventDefaultAction()
+    └─ (Default: HandleProcTriggerSpellAuraProc → CastSpell)
+```
+
+#### Wichtig: DBC EffectSpellClassMask wird NICHT geprüft!
+
+Die "Class Mask Target Spells" im WoW Spell Editor (DBC-Feld `EffectSpellClassMask`) hat **keinen Einfluss** auf den Proc-Ablauf bei `SPELL_AURA_PROC_TRIGGER_SPELL`. Der Proc wird ausschließlich über die `spell_proc` Tabelle und C++ Script Hooks gefiltert. Die Class Mask im DBC kann beliebig sein oder leer — sie wird von `HandleProcTriggerSpellAuraProc()` ignoriert.
+
+#### Kritisch: SpellFamilyFlags immer per Debug-Log verifizieren!
+
+**SpellFamilyFlags in der DBC können von "Standard-WotLK-Werten" abweichen.** Beispiel aus der Praxis:
+
+| Spell | Erwartete Flags (Online-Referenzen) | Tatsächliche Flags (unsere DBC) |
+|-------|--------------------------------------|--------------------------------|
+| Bloodthirst (23881) | `flags[0]=0x40000000` (Bit 30) | `flags[0]=0x00000000, flags[1]=0x00000400` (Bit 42) |
+
+**Regel:** Niemals SpellFamilyFlags aus Online-Datenbanken (wowhead, wowdb, etc.) für C++ Code übernehmen, ohne sie gegen die eigene Spell.dbc zu verifizieren. Diagnose-Pattern:
+
+```cpp
+LOG_INFO("module", "CheckProc: spell {} family {} flags[0]=0x{:08X} flags[1]=0x{:08X}",
+    spellInfo->Id, spellInfo->SpellFamilyName,
+    spellInfo->SpellFamilyFlags[0], spellInfo->SpellFamilyFlags[1]);
+```
+
+#### spell_proc Tabelle — Pflichtfelder
+
+```sql
+INSERT INTO `spell_proc` (`SpellId`, `SchoolMask`, `SpellFamilyName`, `SpellFamilyMask0`,
+    `SpellFamilyMask1`, `SpellFamilyMask2`, `ProcFlags`, `SpellTypeMask`, `SpellPhaseMask`,
+    `HitMask`, `AttributesMask`, `DisableEffectsMask`, `ProcsPerMinute`, `Chance`, `Cooldown`, `Charges`)
+VALUES (900116, 0, 0, 0, 0, 0, 0x10, 1, 2, 0, 0, 0, 0, 100, 0, 0);
+--            │  │  │        │    │  │  │                  │
+--            │  │  │        │    │  │  └─ Chance 100%     │
+--            │  │  │        │    │  └─ SpellPhaseMask=HIT │
+--            │  │  │        │    └─ SpellTypeMask=DAMAGE  │
+--            │  │  │        └─ ProcFlags=DONE_SPELL_MELEE_DMG_CLASS
+--            │  │  └─ FamilyMask=0 (kein DBC-Filter, Script entscheidet)
+--            │  └─ FamilyName=0 (akzeptiert alle Spell-Familien)
+--            └─ SchoolMask=0 (alle Schulen)
+```
+
+**Tipp:** `SpellFamilyName=0` und `SpellFamilyMask=0` in spell_proc bedeutet "akzeptiere alles" — die Filterung wird komplett dem C++ `CheckProc` überlassen.
 
 ### SQL-Registrierung
 
