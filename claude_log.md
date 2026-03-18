@@ -8,6 +8,15 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ### 2026-03-18
 
+#### [mod-paragon] Fix: Missing GemProperties value in paragon_currency_item.sql
+
+- **Zeitstempel**: 2026-03-18
+- **Repo**: mod-paragon
+- **Änderungen**:
+  - `data/sql/db-world/base/paragon_currency_item.sql`: INSERT hatte 138 Spalten aber nur 137 Werte — der Wert für `GemProperties` fehlte. Dadurch verschoben sich alle nachfolgenden Werte um eine Position (`HolidayId` bekam `''`, `ScriptName` bekam `0`, `VerifiedBuild` fiel komplett weg). Dies führte zum Fehler beim Auto-Update der World-Datenbank.
+  - Fix: `0` für `GemProperties` eingefügt, damit alle 138 Spalten korrekt zugeordnet werden.
+- **Betroffene Dateien**: `data/sql/db-world/base/paragon_currency_item.sql`
+
 #### [share-public] Initiale Projektdokumentation erstellt
 
 - **Zeitstempel**: 2026-03-18
