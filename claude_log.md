@@ -58,6 +58,17 @@ Vollständige Analyse aller 5 Repositories durchgeführt:
 - Zuvor nur README.md ("# share-public")
 - Jetzt zentrale Dokumentations-Hub
 
+#### [mod-paragon-itemgen] Phase 4: Gameplay-Verbesserungen
+
+- **Zeitstempel**: 2026-03-18
+- **Repo**: mod-paragon-itemgen
+- **Änderungen**:
+  - **4.1 Combat Rating Pool Split**: DPS Pool aufgeteilt in Melee (Str/Agi → Crit, Haste, Hit, ArmorPen, Expertise, AP) und Caster (Int/Spi → Crit, Haste, Hit, SpellPower, ManaRegen). Pool-Auswahl erfolgt automatisch basierend auf `mainStat` des Spielers. Funktionssignaturen `GetCombatRatingPool()` und `PickTwoRandomRatings()` um `mainStat`-Parameter erweitert.
+  - **4.2 PROP_ENCHANTMENT_SLOT Konflikt**: Items mit Random Properties ("of the Bear") werden bewusst überschrieben (Paragon-Stats sind wertvoller). Debug-Log bei Override, Spieler erhält Chat-Hinweis. Dokumentation in CLAUDE.md aktualisiert.
+  - **4.3 AH Restriction**: Verifiziert blockiert — `OnAuctionAdd` ist void, kein `CanCreateAuction`-Hook in AzerothCore vorhanden. Cursed Items sind bereits Soulbound. Status dokumentiert.
+- **Betroffene Dateien**: `src/ParagonItemGen.cpp`, `CLAUDE.md`
+- **Branch**: `claude/review-share-public-todos-a2euu`
+
 #### [mod-paragon] Phase 3: Architektur-Verbesserungen
 
 - **Zeitstempel**: 2026-03-18
@@ -89,7 +100,7 @@ Vollständige Analyse aller 5 Repositories durchgeführt:
 - [x] **mod-paragon: C++ und Lua Aura-IDs vereinheitlichen** — AURA_STRENGTH von 7507 auf 100001 geändert, alle IDs jetzt konsistent mit Lua-System ✅
 - [x] **mod-paragon: Prepared Statements** — 13 Queries auf CharacterDatabasePreparedStatement umgestellt ✅
 - [x] **mod-paragon-itemgen: Prepared Statements** — 14 Queries auf Prepared Statements umgestellt (Character + World DB) ✅
-- [ ] **mod-paragon-itemgen: Combat Rating Pool Split** — DPS Pool in Melee/Caster aufteilen
+- [x] **mod-paragon-itemgen: Combat Rating Pool Split** — DPS Pool in Melee (Str/Agi) und Caster (Int/Spi) aufgeteilt ✅
 
 ### Niedrige Priorität / Verbesserungen
 
@@ -97,8 +108,8 @@ Vollständige Analyse aller 5 Repositories durchgeführt:
 - [x] **mod-paragon: In-Memory Caching** — Paragon Level/XP in `std::unordered_map<uint32, ParagonCache>` gecacht, Map-Change liest aus Cache statt DB ✅
 - [x] **mod-paragon: Max Level Cap** — Konfigurierbares `Paragon.MaxLevel` (Default: 0 = kein Limit) ✅
 - [x] **mod-paragon: XP Overflow Fix** — `pow(1.1, level-1)` Overflow bei hohen Levels verhindern ✅
-- [ ] **mod-paragon-itemgen: AH Restriction** — Auction House Hook fehlt im Core
-- [ ] **mod-paragon-itemgen: PROP_ENCHANTMENT_SLOT Konflikt** — Items mit Random Properties ("of the Bear") werden überschrieben
+- [ ] **mod-paragon-itemgen: AH Restriction** — Blockiert: AzerothCore hat keinen `CanCreateAuction`-Hook, `OnAuctionAdd` ist void. Cursed Items sind bereits Soulbound.
+- [x] **mod-paragon-itemgen: PROP_ENCHANTMENT_SLOT Konflikt** — Random Properties werden bewusst überschrieben, Spieler erhält Chat-Hinweis ✅
 
 ---
 
