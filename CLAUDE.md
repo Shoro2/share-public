@@ -455,7 +455,7 @@ Die Loader-Funktion muss nach dem Modulnamen benannt werden, wobei `-` durch `_`
 | Spell ID | Name | Typ | Effekt |
 |----------|------|-----|--------|
 | 900106 | Paragon Strike | SpellScript | SCHOOL_DAMAGE: 666 + 66% AP, +1%/Paragon-Level |
-| 900107 | Bladestorm CD Reduce | SpellScript | DUMMY: Reduziert Bladestorm (46927) CD um 0.5s pro Cast |
+| 900107 | Bladestorm CD Reduce | AuraScript | PROC: Bei Melee-Damage → Bladestorm (46927) CD um 0.5s reduzieren |
 | 900116 | Bloody Whirlwind Passive | AuraScript | PROC: Bei Bloodthirst → Buff 900115 anwenden |
 | 1680 | Whirlwind Consume | SpellScript | AFTER_CAST: Entfernt alle Stacks von Buff 900115 |
 
