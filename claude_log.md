@@ -73,8 +73,8 @@ Vollständige Analyse aller 5 Repositories durchgeführt:
 
 - [ ] **mod-paragon: Konfiguration aktivieren** — `sConfigMgr->GetOption<>()` für alle hardcodierten Werte einbauen
 - [ ] **mod-paragon: C++ und Lua Aura-IDs vereinheitlichen** — Strength: 7507 (C++) vs 100001 (Lua) Konflikt lösen
-- [ ] **mod-paragon: Prepared Statements** — String-formatierte Queries durch Prepared Statements ersetzen
-- [ ] **mod-paragon-itemgen: Prepared Statements** — Ebenfalls DB-Queries absichern
+- [x] **mod-paragon: Prepared Statements** — 13 Queries auf CharacterDatabasePreparedStatement umgestellt ✅
+- [x] **mod-paragon-itemgen: Prepared Statements** — 14 Queries auf Prepared Statements umgestellt (Character + World DB) ✅
 - [ ] **mod-paragon-itemgen: Combat Rating Pool Split** — DPS Pool in Melee/Caster aufteilen
 
 ### Niedrige Priorität / Verbesserungen
