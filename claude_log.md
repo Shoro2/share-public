@@ -8,6 +8,15 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ### 2026-03-18
 
+#### [mod-paragon] Feature: Shift+Click für 10 Punkte auf einmal
+
+- **Zeitstempel**: 2026-03-18
+- **Repo**: mod-paragon
+- **Änderungen**:
+  - `Paragon_System_LUA/Paragon_Client.lua`: +/- Buttons senden `amount=10` wenn Shift gehalten wird, sonst `amount=1`
+  - `Paragon_System_LUA/Paragon_Server.lua`: `AllocatePoint` und `DeallocatePoint` akzeptieren optionalen `amount`-Parameter. Betrag wird automatisch auf verfügbare Punkte, Max-Cap und aktuelle Allocation geclampt.
+- **Betroffene Dateien**: `Paragon_System_LUA/Paragon_Client.lua`, `Paragon_System_LUA/Paragon_Server.lua`
+
 #### [mod-paragon] Fix: Missing GemProperties value in paragon_currency_item.sql
 
 - **Zeitstempel**: 2026-03-18
