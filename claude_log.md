@@ -6,6 +6,41 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ## Änderungshistorie
 
+### 2026-03-19
+
+#### [mod-paragon] Feature: Konfigurierbare Max-Punkte pro Paragon-Stat
+
+- **Zeitstempel**: 2026-03-19
+- **Repo**: mod-paragon
+- **Änderungen**:
+  - Maximale Punkte pro Paragon-Stat sind jetzt über `mod_paragon.conf` konfigurierbar (Standard: 255)
+  - 17 neue Config-Optionen: `Paragon.MaxStr`, `Paragon.MaxInt`, `Paragon.MaxAgi`, `Paragon.MaxSpi`, `Paragon.MaxSta`, `Paragon.MaxHaste`, `Paragon.MaxArmorPen`, `Paragon.MaxSpellPower`, `Paragon.MaxCrit`, `Paragon.MaxHit`, `Paragon.MaxBlock`, `Paragon.MaxExpertise`, `Paragon.MaxParry`, `Paragon.MaxDodge`, `Paragon.MaxMountSpeed`, `Paragon.MaxManaRegen`, `Paragon.MaxLifeLeech`
+  - C++: `conf_MaxStats[17]` Array, geladen in `OnAfterConfigLoad()`, Clamping in `RefreshParagonAura()`
+  - Lua: `Paragon.MAX_POINTS` Tabelle in `Paragon_Data.lua`, referenziert in allen 17 Stat-Definitionen
+  - Wert `0` = kein Limit (nur durch Aura-Stack-Größe begrenzt)
+- **Betroffene Dateien**:
+  - `mod-paragon/conf/mod_paragon.conf.dist`
+  - `mod-paragon/src/ParagonPlayer.cpp`
+  - `mod-paragon/Paragon_System_LUA/Paragon_Data.lua`
+- **Branch**: `claude/configurable-paragon-stats-PfHFY`
+
+#### [mod-paragon] Refactor: Alle v1/v2 Versionsverweise entfernt
+
+- **Zeitstempel**: 2026-03-19
+- **Repo**: mod-paragon
+- **Änderungen**:
+  - `ParagonV2` → `Paragon` (globale Lua-Tabelle)
+  - `PARAGON_V2_SERVER` → `PARAGON_SERVER`, `PARAGON_V2_CLIENT` → `PARAGON_CLIENT` (AIO Handler)
+  - `ParagonV2Frame` → `ParagonFrame`, `SLASH_PARAGONV2_1` → `SLASH_PARAGON1`
+  - Kommentare: "Paragon System v2" → "Paragon System"
+  - CLAUDE.md: Legacy v1 Store-System-Doku entfernt, Dateistruktur und Beschreibungen aktualisiert
+- **Betroffene Dateien**:
+  - `mod-paragon/Paragon_System_LUA/Paragon_Data.lua`
+  - `mod-paragon/Paragon_System_LUA/Paragon_Server.lua`
+  - `mod-paragon/Paragon_System_LUA/Paragon_Client.lua`
+  - `mod-paragon/CLAUDE.md`
+- **Branch**: `claude/configurable-paragon-stats-PfHFY`
+
 ### 2026-03-18
 
 #### [mod-paragon, azerothcore-wotlk] Feature: Life Leech Stat
