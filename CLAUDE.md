@@ -34,8 +34,8 @@ share-public/
 │   ├── mysql_column_list_all.txt      # Komplette DB-Spaltenstruktur (304 Tabellen, 4129 Spalten)
 │   ├── creature_template.csv          # Kreatur-Template Export (29.949 Einträge, 49+ Spalten)
 │   └── item_template.csv             # Item-Template Export (46.097 Einträge, 133+ Spalten)
-├── AIO_Server/                        # AIO Framework v1.75 (Server-Client Lua Kommunikation)
-│   ├── AIO.lua                        # AIO Haupt-Framework (~1300 Zeilen)
+├── AIO_Server/                        # AIO Framework v1.75 — Server-Seite (Eluna/Lua)
+│   ├── AIO.lua                        # AIO Haupt-Framework (~1300 Zeilen, Server+Client gemeinsamer Code)
 │   ├── queue.lua                      # Nachrichtenwarteschlange
 │   ├── bit53.lua                      # Bit-Operationen
 │   ├── LibCompress.lua                # Komprimierung
@@ -43,6 +43,13 @@ share-public/
 │   ├── Dep_Smallfolk/                 # Lua-Tabellen-Serialisierung
 │   ├── Dep_LuaSrcDiet/               # Code-Obfuskation/Minifizierung
 │   └── Dep_crc32lua/                  # CRC32-Checksummen für Addon-Caching
+├── AIO_Client/                        # AIO Framework v1.75 — Client-Seite (WoW Addon)
+│   ├── AIO_Client.toc                 # WoW Addon TOC (Interface: 30300, SavedVars)
+│   ├── AIO.lua                        # AIO Client-Framework (~1313 Zeilen, gleicher Code wie Server)
+│   ├── queue.lua                      # Nachrichtenwarteschlange (Client-Kopie)
+│   ├── lualzw-zeros/                  # LZW-Dekomprimierung (Client-Kopie)
+│   ├── Dep_Smallfolk/                 # Lua-Tabellen-Deserialisierung (Client-Kopie)
+│   └── Dep_LibWindow-1.1/            # Frame-Positionsspeicherung (LibStub + LibWindow)
 └── python_scripts/                    # Python-Hilfsskripte für DBC-Manipulation und Testing
     ├── add_paragon_spell.py           # Generator für Paragon Passive Spell SQL-Einträge
     ├── copy_spells_dbc.py             # Kopiert spezifische Spells zwischen Spell.dbc-Dateien
@@ -1073,9 +1080,163 @@ AIO verwendet Smallfolk für die Serialisierung. Nachrichten werden als Lua-Tabe
 
 **Max 15 Argumente:** AIO erlaubt maximal 15 Argumente pro Block auf der Server-Seite (AIO.lua Zeile 656-658).
 
-### AIO-Dateien (share-public/AIO_Server/)
+### AIO-Dateien (Deployment)
 
-Die AIO-Framework-Dateien befinden sich in `share-public/AIO_Server/` und müssen in den Server-`lua_scripts/`-Ordner kopiert werden. Version: 1.75.
+| Verzeichnis | Ziel | Beschreibung |
+|-------------|------|-------------|
+| `share-public/AIO_Server/` | Server: `lua_scripts/` | AIO Framework + Dependencies für Eluna. Wird beim Server-Start geladen. |
+| `share-public/AIO_Client/` | Client: `Interface/AddOns/AIO_Client/` | WoW Addon für den WoW-Client. Empfängt und führt Server-Addons aus. |
+
+### AIO Client-Addon (share-public/AIO_Client/)
+
+Das AIO Client-Addon ist ein WoW 3.3.5a Addon (`Interface: 30300`), das im WoW-Client unter `Interface/AddOns/AIO_Client/` installiert wird. Es empfängt Lua-Code vom Server, cached diesen lokal, und führt ihn aus.
+
+#### Datei-Struktur
+
+```
+AIO_Client/
+├── AIO_Client.toc              # WoW Addon TOC-Datei
+├── AIO.lua                     # Haupt-Framework (gleicher Code wie Server-Version)
+├── queue.lua                   # Nachrichtenwarteschlange
+├── lualzw-zeros/lualzw.lua     # LZW-Dekomprimierung
+├── Dep_Smallfolk/smallfolk.lua  # Lua-Tabellen-Deserialisierung
+└── Dep_LibWindow-1.1/          # Frame-Positionsspeicherung
+    ├── LibStub.lua
+    └── LibWindow-1.1/LibWindow-1.1.lua
+```
+
+#### SavedVariables
+
+| Variable | Typ | Scope | Inhalt |
+|----------|-----|-------|--------|
+| `AIO_sv` | Table | Account-weit | Globale Variablen (via `AIO.AddSavedVar(key)`) |
+| `AIO_sv_char` | Table | Pro Charakter | Charakter-Variablen (via `AIO.AddSavedVarChar(key)`) |
+| `AIO_sv_Addons` | Table | Account-weit | Cache aller empfangenen Addons `{name → {name, crc, code}}` |
+
+#### Initialisierungs-Ablauf (Client-Seite)
+
+```
+WoW-Client startet
+    ↓
+ADDON_LOADED Event für "AIO_Client"
+    ↓
+1. SavedVariables laden (AIO_sv, AIO_sv_char, AIO_sv_Addons)
+2. Gespeicherte Variablen in _G[] wiederherstellen
+3. CRC-Hashes aller gecachten Addons sammeln
+4. Init-Nachricht an Server senden: AIO.Msg():Add("AIO", "Init", VERSION, {name→crc})
+   (wiederholt jede 1s mit 1.5x Backoff bis AIO_INITED = true)
+    ↓
+Server antwortet mit Init-Nachricht:
+    - version: Server-AIO-Version (muss übereinstimmen)
+    - N: Anzahl Addons
+    - addons: {index → {name, crc, code}} (neue/geänderte Addons)
+    - cached: {index → name} (unveränderte Addons, CRC stimmt)
+    ↓
+Client verarbeitet Init:
+    ├─ Neue Addons → in AIO_sv_Addons speichern (Cache aktualisieren)
+    ├─ Gecachte Addons → Code aus AIO_sv_Addons verwenden
+    ├─ Veraltete Addons → aus Cache entfernen
+    └─ Alle Addons in Reihenfolge ausführen via RunAddon(name):
+        ├─ Code aus Cache lesen
+        ├─ LZW dekomprimieren (falls komprimiert)
+        └─ loadstring(code, name)() ausführen
+    ↓
+AIO_INITED = true → Init-Timer gestoppt
+Pre-init-Nachrichten werden nachträglich verarbeitet
+```
+
+#### Code-Caching & CRC-Validierung
+
+AIO verwendet CRC32-Checksummen, um zu entscheiden, ob Addon-Code neu gesendet werden muss:
+
+```
+Server: AIO.AddAddon("file.lua")
+    → Code lesen → LuaSrcDiet (optional) → LZW komprimieren → CRC32 berechnen
+    → In AIO_ADDONSORDER speichern: {name, crc, code}
+
+Client Login:
+    → Sendet {addon_name → crc} für alle gecachten Addons
+
+Server vergleicht:
+    ├─ CRC stimmt → Addon nicht senden (Bandbreite sparen)
+    └─ CRC anders → Neuen Code senden → Client aktualisiert Cache
+```
+
+#### Bekannte Einschränkung: Handler-Re-Registrierung
+
+**WICHTIG für Addon-Entwicklung:** `AIO.RegisterEvent()` (Zeile 821) hat einen `assert`, der verhindert, dass ein Handler-Name zweimal registriert wird:
+
+```lua
+assert(not AIO_BLOCKHANDLES[name], "an event is already registered for the name: "..name)
+```
+
+**Problem:** Wenn AIO Addon-Code erneut sendet (z.B. nach Code-Änderung), wird der Addon-Code ein zweites Mal via `loadstring()` ausgeführt. Der zweite `AIO.AddHandlers("Name", handlers)` Aufruf schlägt mit einem Assert fehl, weil der Name bereits aus dem ersten Laden registriert ist.
+
+**Konsequenz:** Die neuen Handler werden NICHT registriert. Die alten Handler (aus dem ersten Laden) bleiben aktiv und referenzieren die alten Closure-Variablen. Neue lokale Variablen (z.B. `local dungeonData = {}`) werden nie befüllt.
+
+**Workaround:** Globale Handler-Tabelle verwenden und nur einmal registrieren:
+
+```lua
+-- Globale Tabelle überlebt Addon-Reloads
+if not MY_Handlers then
+    MY_Handlers = {}
+end
+
+-- Funktionen in-place aktualisieren (neue Closures über aktuelle Locals)
+MY_Handlers.MyFunc = function(player, ...)
+    -- Referenziert AKTUELLE lokale Variablen
+end
+
+-- Nur beim ersten Laden registrieren
+if not MY_HandlersRegistered then
+    AIO.AddHandlers("MyAddon", MY_Handlers)
+    MY_HandlersRegistered = true
+end
+```
+
+**Warum das funktioniert:** Der AIO-Wrapper hält eine Referenz auf das Tabellen-OBJEKT (nicht eine Kopie). Wenn Funktionen in der Tabelle aktualisiert werden, sieht der Wrapper die neuen Funktionen.
+
+#### Addon-Ausführung (RunAddon)
+
+```lua
+-- AIO_Client/AIO.lua Zeile 1047-1055
+local function RunAddon(name)
+    local code = AIO_sv_Addons[name].code
+    local compression = ssub(code, 1, 1)
+    local compressedcode = ssub(code, 2)
+    if compression == AIO_Compressed then
+        compressedcode = lualzw.decompress(compressedcode)
+    end
+    assert(loadstring(compressedcode, name))()
+end
+```
+
+Der Code wird via `loadstring()` in einer neuen Umgebung ausgeführt. Globale Zuweisungen landen in `_G[]`. `local` Variablen sind nur innerhalb des Addon-Scopes sichtbar.
+
+#### Nachrichten-Transport
+
+AIO nutzt WoW's `SendAddonMessage()` / `CHAT_MSG_ADDON` Event über den `"WHISPER"` Kanal:
+
+| Richtung | Max Paketgröße | Kanal |
+|----------|---------------|-------|
+| Server → Client | 2560 Bytes | `CHAT_MSG_ADDON` via Eluna |
+| Client → Server | 255 Bytes | `SendAddonMessage(prefix, msg, "WHISPER", UnitName("player"))` |
+
+Lange Nachrichten werden in Teile aufgeteilt und auf Empfängerseite reassembliert. Unvollständige Nachrichten werden nach 15 Sekunden verworfen (Memory-Limit: 500KB pro Spieler).
+
+#### Slash-Commands (Client)
+
+| Befehl | Wirkung |
+|--------|---------|
+| `/aio help` | Zeigt verfügbare Befehle |
+| `/aio reset` | Löscht Addon-Cache (AIO_sv_Addons) und erzwingt Neuübertragung |
+| `/aio version` | Zeigt AIO-Version |
+
+#### ForceReload / ForceReset
+
+Der Server kann den Client zwingen, die UI neu zu laden:
+- `AIO.Handle(player, "AIO", "ForceReload")` → Erstellt unsichtbaren Button über den gesamten Bildschirm; Klick löst `ReloadUI()` aus
+- `AIO.Handle(player, "AIO", "ForceReset")` → Cache leeren + ForceReload
 
 ## Build-Anleitung
 
