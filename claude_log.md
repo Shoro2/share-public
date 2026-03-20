@@ -8,6 +8,41 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ### 2026-03-20
 
+#### [mod-dungeon-challenge] Feature: AIO Client UI ersetzt Gossip-Menüs
+
+- **Zeitstempel**: 2026-03-20
+- **Repo**: mod-dungeon-challenge
+- **Änderungen**:
+  - Neues AIO-basiertes Client-UI erstellt: Gossip-Menüs durch echte WoW-Frames ersetzt
+  - `dungeon_challenge_server.lua`: Server-Script mit AIO-Handlern, DB-Laden, GameObject-Gossip→AIO-Brücke
+  - `dungeon_challenge_ui.lua`: Vollständiges WoW-UI mit Tabs (Dungeons, Leaderboard, My Runs, Records)
+  - Features: Dungeon-Auswahl, Difficulty-Slider (1-20), Confirm-Panel mit Affix-Details, Leaderboard, persönliche Bestzeiten, Boss-Kill-Records
+  - Slash Command `/dc` zum Öffnen der UI
+  - Alle Daten werden beim Login via AIO.AddOnInit an den Client gesendet (dungeon data, affixes, config)
+  - CLAUDE.md aktualisiert mit neuer AIO-Architektur-Dokumentation
+  - Alte `dungeon_challenge_gameobject.lua` als DEPRECATED markiert
+- **Betroffene Dateien**:
+  - `lua_scripts/dungeon_challenge_server.lua` (NEU)
+  - `lua_scripts/dungeon_challenge_ui.lua` (NEU)
+  - `CLAUDE.md` (aktualisiert)
+- **Branch**: `claude/review-lua-communication-MItns`
+
+#### [share-public] Docs: AIO Framework Dokumentation + mod-dungeon-challenge Integration
+
+- **Zeitstempel**: 2026-03-20
+- **Repo**: share-public
+- **Änderungen**:
+  - CLAUDE.md um AIO Framework Sektion ergänzt (APIs, Architektur, Datei-Struktur)
+  - Repository-Tabelle um mod-dungeon-challenge erweitert
+  - Repository-Struktur um AIO_Server Ordner ergänzt
+  - claude_log.md mit Änderungseinträgen aktualisiert
+- **Betroffene Dateien**:
+  - `CLAUDE.md` (aktualisiert)
+  - `claude_log.md` (aktualisiert)
+- **Branch**: `claude/review-lua-communication-MItns`
+
+---
+
 #### [mod-paragon] Fix: CREATE TABLE IF NOT EXISTS für SQL-Base-Scripts
 
 - **Zeitstempel**: 2026-03-20

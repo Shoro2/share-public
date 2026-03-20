@@ -12,7 +12,8 @@ Das Gesamtprojekt besteht aus einem AzerothCore-basierten World of Warcraft Serv
 | [mod-paragon](https://github.com/Shoro2/mod-paragon) | Post-Level-80 Paragon-Progressionssystem: Account-weites XP + Level, 5 Stat-Punkte pro Level, Aura-basierte Stat-Zuweisung |
 | [mod-paragon-itemgen](https://github.com/Shoro2/mod-paragon-itemgen) | Automatische Bonus-Stat-Enchantments auf Items basierend auf Paragon-Level. 5-Slot-System, Rollen-Pools, Cursed Items |
 | [mod-custom-spells](https://github.com/Shoro2/mod-custom-spells) | Custom SpellScripts (Paragon Strike, Bladestorm CD Reduce, Bloody Whirlwind) |
-| [share-public](https://github.com/Shoro2/share-public) | **Dieses Repo** — Zentrale Dokumentation, KI-Kontext, Python-Tools, DBC-Dateien, DB-Extrakte, Änderungslog |
+| [mod-dungeon-challenge](https://github.com/Shoro2/mod-dungeon-challenge) | Mythic+-Style Dungeon Challenge System: Difficulty 1-20, Affixes, Leaderboards, AIO Client UI |
+| [share-public](https://github.com/Shoro2/share-public) | **Dieses Repo** — Zentrale Dokumentation, KI-Kontext, Python-Tools, DBC-Dateien, DB-Extrakte, AIO Framework, Änderungslog |
 
 ## Repository-Struktur (share-public)
 
@@ -33,6 +34,15 @@ share-public/
 │   ├── mysql_column_list_all.txt      # Komplette DB-Spaltenstruktur (304 Tabellen, 4129 Spalten)
 │   ├── creature_template.csv          # Kreatur-Template Export (29.949 Einträge, 49+ Spalten)
 │   └── item_template.csv             # Item-Template Export (46.097 Einträge, 133+ Spalten)
+├── AIO_Server/                        # AIO Framework v1.75 (Server-Client Lua Kommunikation)
+│   ├── AIO.lua                        # AIO Haupt-Framework (~1300 Zeilen)
+│   ├── queue.lua                      # Nachrichtenwarteschlange
+│   ├── bit53.lua                      # Bit-Operationen
+│   ├── LibCompress.lua                # Komprimierung
+│   ├── lualzw-zeros/                  # LZW-Komprimierung
+│   ├── Dep_Smallfolk/                 # Lua-Tabellen-Serialisierung
+│   ├── Dep_LuaSrcDiet/               # Code-Obfuskation/Minifizierung
+│   └── Dep_crc32lua/                  # CRC32-Checksummen für Addon-Caching
 └── python_scripts/                    # Python-Hilfsskripte für DBC-Manipulation und Testing
     ├── add_paragon_spell.py           # Generator für Paragon Passive Spell SQL-Einträge
     ├── copy_spells_dbc.py             # Kopiert spezifische Spells zwischen Spell.dbc-Dateien
@@ -945,6 +955,73 @@ Der Ordner `dbc/` enthält alle 246 DBC-Dateien des WoW 3.3.5a Clients im WDBC-B
 
 - Tab-Einrückung (Eluna/AIO Konvention)
 - AIO Handler Pattern: `AIO.AddHandlers("NAME", {})`
+- AIO Msg Pattern: `AIO.Msg():Add("Name", "Handler", ...):Send(player)`
+- Server-side Handlers erhalten `(player, ...)` als Parameter
+- Client-side Handlers erhalten `(...)` ohne player
+- `AIO.AddAddon()` am Anfang der Client-Datei: `if AIO.AddAddon() then return end`
+- `AIO.AddOnInit(function(msg, player) ... return msg end)` für Login-Daten
+
+## AIO Framework (Server-Client Kommunikation)
+
+### Übersicht
+
+AIO (Addon IO) ermöglicht es, Lua-Code vom Server an den WoW-Client zu senden und bidirektionale Kommunikation zwischen Server und Client herzustellen. Damit können echte WoW-UI-Frames erstellt werden statt nur Gossip-Menüs.
+
+### Architektur
+
+```
+Server (Eluna)                     Client (WoW Addon)
+    |                                    |
+    +-- AIO.AddAddon("file.lua")        |
+    |   → Sendet Lua-Code an Client     |
+    |                                    +-- Code wird ausgeführt
+    |                                    |   → CreateFrame(), UI erstellen
+    +-- AIO.AddOnInit(func)             |
+    |   → Initiale Daten bei Login      |
+    |                                    |
+    +-- AIO.Msg():Add():Send(player)    |
+    |   → Nachricht an Client   ------->+-- Handler aufgerufen
+    |                                    |
+    +-- Handler aufgerufen  <-----------+-- AIO.Msg():Add():Send()
+    |   → Nachricht vom Client          |
+```
+
+### Datei-Struktur
+
+```
+lua_scripts/
+├── AIO.lua                    # AIO Framework (aus share-public/AIO_Server/)
+├── queue.lua                  # AIO Dependency
+├── bit53.lua                  # AIO Dependency
+├── LibCompress.lua            # AIO Dependency
+├── lualzw-zeros/              # AIO Dependency
+├── Dep_Smallfolk/             # AIO Dependency (Serialisierung)
+├── Dep_LuaSrcDiet/            # AIO Dependency (Code-Obfuskation)
+├── Dep_crc32lua/              # AIO Dependency (Caching)
+├── my_addon_server.lua        # Server-Script + AIO.AddAddon()
+└── my_addon_client.lua        # Client-UI (gesendet via AIO)
+```
+
+### Schlüssel-APIs
+
+| Funktion | Seite | Beschreibung |
+|----------|-------|-------------|
+| `AIO.AddAddon([path, name])` | Server | Registriert Datei zum Senden an Client |
+| `AIO.AddHandlers(name, table)` | Beide | Registriert Handler-Funktionen |
+| `AIO.Msg()` | Beide | Erstellt neue Nachricht |
+| `msg:Add(name, ...)` | Beide | Fügt Handler-Aufruf hinzu |
+| `msg:Send(player)` | Server | Sendet an Spieler |
+| `msg:Send()` | Client | Sendet an Server |
+| `AIO.Handle(player, name, handler, ...)` | Server | Shorthand für Msg+Add+Send |
+| `AIO.Handle(name, handler, ...)` | Client | Shorthand für Msg+Add+Send |
+| `AIO.AddOnInit(func)` | Server | Hook für Login-Nachricht |
+| `AIO.SavePosition(frame, char)` | Client | Speichert Frame-Position |
+| `AIO.AddSavedVar(key)` | Client | Account-weite Variable speichern |
+| `AIO.AddSavedVarChar(key)` | Client | Charakter-spezifische Variable speichern |
+
+### AIO-Dateien (share-public/AIO_Server/)
+
+Die AIO-Framework-Dateien befinden sich in `share-public/AIO_Server/` und müssen in den Server-`lua_scripts/`-Ordner kopiert werden. Version: 1.75.
 
 ## Build-Anleitung
 
