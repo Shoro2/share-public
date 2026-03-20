@@ -6,6 +6,37 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ## Änderungshistorie
 
+### 2026-03-20
+
+#### [mod-dungeon-challenge] Feature: Neues Dungeon Challenge Modul (Mythic+ inspiriert)
+
+- **Zeitstempel**: 2026-03-20
+- **Repo**: mod-dungeon-challenge
+- **Änderungen**:
+  - Neues AzerothCore-Modul erstellt: Mythic+-ähnliches Dungeon-Challenge-System
+  - NPC-basierte UI: Dungeon-Auswahl, Schwierigkeit (1-20), Run starten, Bestenliste
+  - Affix-System: ~5% der Mobs erhalten zufällige Affixe (10 Affix-Typen)
+  - Implementierte Affixe: Bolstering, Raging, Sanguine, Bursting, Fortified
+  - Timer-System mit Tod-Strafe (-5s pro Tod)
+  - HP/DMG-Skalierung pro Schwierigkeitsstufe
+  - Bestenliste mit DB-Persistenz
+  - Gold-Belohnungen (Bonus für In-Time-Completion)
+  - 16 WotLK-Dungeons vorkonfiguriert
+  - Vollständige CLAUDE.md und README.md Dokumentation
+- **Betroffene Dateien**:
+  - `src/DungeonChallenge.h` - Header mit allen Datenstrukturen
+  - `src/DungeonChallenge.cpp` - Singleton-Manager
+  - `src/DungeonChallengeNpc.cpp` - Gossip-NPC
+  - `src/DungeonChallengeScripts.cpp` - Event-Hooks
+  - `src/mod_dungeon_challenge_loader.cpp` - Loader
+  - `data/sql/db-world/00_dungeon_challenge_world.sql` - World-DB
+  - `data/sql/db-characters/00_dungeon_challenge_characters.sql` - Characters-DB
+  - `conf/mod_dungeon_challenge.conf.dist` - Konfiguration
+  - `CLAUDE.md`, `README.md` - Dokumentation
+- **Branch**: `claude/azeroth-dungeon-module-tPYFF`
+
+---
+
 ### 2026-03-19
 
 #### [mod-paragon] Feature: Konfigurierbare Max-Punkte pro Paragon-Stat
