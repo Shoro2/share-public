@@ -957,7 +957,7 @@ Der Ordner `dbc/` enthält alle 246 DBC-Dateien des WoW 3.3.5a Clients im WDBC-B
 - AIO Handler Pattern: `AIO.AddHandlers("NAME", {})`
 - AIO Msg Pattern: `AIO.Msg():Add("Name", "Handler", ...):Send(player)`
 - Server-side Handlers erhalten `(player, ...)` als Parameter
-- Client-side Handlers erhalten `(...)` ohne player
+- Client-side Handlers erhalten **auch** `(player, ...)` — AIO übergibt `player` IMMER als erstes Argument (auf Client-Seite ist `player` der Spielername als String)
 - `AIO.AddAddon()` am Anfang der Client-Datei: `if AIO.AddAddon() then return end`
 - `AIO.AddOnInit(function(msg, player) ... return msg end)` für Login-Daten
 
@@ -1018,6 +1018,60 @@ lua_scripts/
 | `AIO.SavePosition(frame, char)` | Client | Speichert Frame-Position |
 | `AIO.AddSavedVar(key)` | Client | Account-weite Variable speichern |
 | `AIO.AddSavedVarChar(key)` | Client | Charakter-spezifische Variable speichern |
+
+### Handler-Funktionsweise (Internas)
+
+**Wichtig:** AIO übergibt `player` IMMER als erstes Argument an Handler-Funktionen — sowohl auf Server- als auch auf Client-Seite.
+
+#### Wie AIO Handler intern aufgerufen werden
+
+```lua
+-- AIO.AddHandlers() erstellt intern einen Wrapper (AIO.lua Zeile 838-842):
+local function handler(player, key, ...)
+    if key and handlertable[key] then
+        handlertable[key](player, ...)
+    end
+end
+
+-- Der Block-Handler (AIO.lua Zeile 660) ruft IMMER mit player auf:
+handledata(player, unpack(data, 3, data[1]+2))
+```
+
+#### Was ist `player` auf jeder Seite?
+
+| Seite | `player` Typ | Quelle |
+|-------|-------------|--------|
+| Server | Userdata (Eluna Player-Objekt) | `sender` aus `ONADDONMSG(event, sender, ...)` |
+| Client | String (Spielername) | `UnitName("player")` via `ONADDONMSG` |
+
+#### Korrektes Handler-Pattern
+
+```lua
+-- Server-Handler (z.B. für Client → Server Nachrichten):
+ServerHandlers.StartChallenge = function(player, mapId, difficulty)
+    -- player = Eluna Player-Objekt (kann :GetName(), :Teleport() etc.)
+end
+
+-- Client-Handler (z.B. für Server → Client Nachrichten):
+ClientHandlers.InitDungeon = function(player, mapId, name, timerMinutes, bossCount)
+    -- player = String mit Spielername (NICHT nil!)
+    -- Alle weiteren Args kommen in der Reihenfolge wie vom Server gesendet
+end
+```
+
+#### Nachrichten-Serialisierung
+
+AIO verwendet Smallfolk für die Serialisierung. Nachrichten werden als Lua-Tabelle gepackt:
+
+```
+-- Server sendet: AIO.Handle(player, "MyAddon", "MyHandler", 42, "hello", true)
+-- Intern serialisiert als: {3, "MyAddon", "MyHandler", 42, "hello", true}
+--                           ^count  ^name    ^key       ^args...
+```
+
+**Tabellen als Parameter:** Lua-Tabellen können direkt als Argumente übergeben werden (Smallfolk serialisiert sie). Bei großen Datenmengen ist es aber besser, Daten als flache Parameter zu senden (ein AIO.Handle pro Eintrag statt einer großen Tabelle), um Nachrichtengrößen-Limits zu vermeiden.
+
+**Max 15 Argumente:** AIO erlaubt maximal 15 Argumente pro Block auf der Server-Seite (AIO.lua Zeile 656-658).
 
 ### AIO-Dateien (share-public/AIO_Server/)
 
