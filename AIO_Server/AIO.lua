@@ -818,7 +818,7 @@ if AIO_MAIN_LUA_STATE then
     function AIO.RegisterEvent(name, func)
         assert(name ~= nil, "name of the registered event expected not nil")
         assert(type(func) == "function", "callback function must be a function")
-        assert(not AIO_BLOCKHANDLES[name], "an event is already registered for the name: "..name)
+        -- Allow re-registration (addon reload / AIO re-send)
         AIO_BLOCKHANDLES[name] = func
     end
 
