@@ -8,6 +8,21 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ### 2026-03-20
 
+#### [mod-paragon] Fix: CREATE TABLE IF NOT EXISTS für SQL-Base-Scripts
+
+- **Zeitstempel**: 2026-03-20
+- **Repo**: mod-paragon
+- **Änderungen**:
+  - `character_paragon_points_create.sql` und `character_paragon_create.sql` verwendeten `CREATE TABLE` ohne `IF NOT EXISTS`
+  - Dies verursachte ERROR 1050 (42S01) "Table already exists" beim Auto-Update-System, wenn die Tabellen bereits existierten
+  - Beide SQL-Dateien auf `CREATE TABLE IF NOT EXISTS` umgestellt
+- **Betroffene Dateien**:
+  - `data/sql/db-characters/base/character_paragon_points_create.sql`
+  - `data/sql/db-characters/base/character_paragon_create.sql`
+- **Branch**: `claude/fix-duplicate-table-error-R8OB8`
+
+---
+
 #### [mod-dungeon-challenge] Feature: Neues Dungeon Challenge Modul (Mythic+ inspiriert)
 
 - **Zeitstempel**: 2026-03-20
