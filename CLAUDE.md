@@ -491,8 +491,7 @@ Die Loader-Funktion muss nach dem Modulnamen benannt werden, wobei `-` durch `_`
 | Aura ID | Stat | System |
 |---------|------|--------|
 | 100000 | Level-Counter (Stack = Level) | C++ |
-| 7507 | Strength | C++ |
-| 100001 | Strength | Lua |
+| 100001 | Strength | C++/Lua |
 | 100002 | Intellect | C++/Lua |
 | 100003 | Agility | C++/Lua |
 | 100004 | Spirit | C++/Lua |
@@ -502,11 +501,12 @@ Die Loader-Funktion muss nach dem Modulnamen benannt werden, wobei `-` durch `_`
 
 ### Bekannte Probleme
 
-- C++ und Lua verwenden verschiedene Aura-IDs für Strength (7507 vs 100001)
+- ~~C++ und Lua verwenden verschiedene Aura-IDs für Strength (7507 vs 100001)~~ → Behoben: Beide nutzen 100001
+- ~~Strength-Stat funktionierte nicht~~ → Behoben: AzerothCore spell_dbc Override für ID 100001 entfernt (kollidierte mit "Drain Soul increased damage")
+- Life Leech verschwindet selten (schwer reproduzierbar) → Spell-Definition gehärtet mit NOT_STEALABLE, USABLE_WHILE_FEARED, USABLE_WHILE_CONFUSED, HIDE_IN_COMBAT_LOG + Debug-Logging hinzugefügt
 - NPC-Script (`npc_paragon`) wird im Loader nicht registriert
-- Punkt-Reset setzt nur 5 von 16 Stats zurück
-- Keine Prepared Statements (SQL Injection Risiko)
-- Konfiguration wird nicht aus `.conf` gelesen (alles hardcoded)
+- Keine Prepared Statements in Lua (SQL Injection Risiko)
+- SQL-Pfad-Registrierung fehlte (include.sh/conf.sh.dist waren leer) → Behoben
 
 ## Item-Generator (mod-paragon-itemgen)
 
