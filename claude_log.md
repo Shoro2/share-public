@@ -8,6 +8,20 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ### 2026-03-21
 
+#### [mod-dungeon-challenge] Fix: Boss mob respawn trigger
+
+- **Zeitstempel**: 2026-03-21
+- **Repo**: mod-dungeon-challenge
+- **Änderungen**:
+  - Bug: Der Mob-Respawn-Mechanismus (Mobs spawnen beim Pull an Originalposition) wurde auch auf Dungeon-Bosse angewandt, da die Boss-Erkennung nur `rank >= 3` und `isWorldBoss()` prüfte
+  - Normale Dungeon-Bosse haben typischerweise `rank = 1` (Elite) mit dem dynamischen Flag `CREATURE_FLAG_EXTRA_DUNGEON_BOSS`
+  - Fix: Neue statische Helper-Funktion `IsChallengeBoss()` eingeführt, die `rank >= 3 || isWorldBoss() || IsDungeonBoss()` prüft
+  - Beide betroffene Stellen korrigiert: Mob-Respawn-Logik und Boss-Kill-Erkennung
+  - `AssignAffixesToCreatures()` in DungeonChallenge.cpp nutzte bereits alle drei Checks
+- **Betroffene Dateien**:
+  - `src/DungeonChallengeScripts.cpp` (IsChallengeBoss Helper + 2 Boss-Check-Stellen)
+- **Branch**: `claude/fix-mob-boss-trigger-Kbsln`
+
 #### [mod-dungeon-challenge] Feature: Active Run Tracker UI
 
 - **Zeitstempel**: 2026-03-21
