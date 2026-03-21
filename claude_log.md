@@ -6,6 +6,27 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ## Änderungshistorie
 
+### 2026-03-21
+
+#### [mod-dungeon-challenge] Feature: Active Run Tracker UI
+
+- **Zeitstempel**: 2026-03-21
+- **Repo**: mod-dungeon-challenge
+- **Änderungen**:
+  - Neues AIO-basiertes Active Run Tracker Frame implementiert (ähnlich Retail WoW Mythic+ Tracker)
+  - Server-seitig: Lua-basiertes Run-Tracking mit Eluna Hooks (PLAYER_EVENT_ON_MAP_CHANGE, PLAYER_EVENT_ON_KILL_CREATURE, PLAYER_EVENT_ON_KILLED_BY_CREATURE)
+  - AIO Messages: RunStart, BossKilled, DeathUpdate, RunCompleted, RunEnd
+  - Client-seitig: Kompaktes TrackerFrame (250px, TOPRIGHT, bewegbar, Position gespeichert)
+  - Features: Echtzeit-Timer mit Farbcodierung (grün/gelb/rot), +2/+3 Threshold-Zeiten (80%/60% der Timerzeit), Boss-Kill-Checkliste mit individuellen Kill-Zeiten, Death-Counter mit Strafzeit-Anzeige
+  - Auto-Show bei Run-Start, Auto-Hide 60s nach Completion
+  - Neuer Slash Command `/dc tracker` zum Toggling
+  - CLAUDE.md aktualisiert
+- **Betroffene Dateien**:
+  - `lua_scripts/dungeon_challenge_server.lua` (erweitert: trackedRuns, BuildAffixString, Eluna Event Hooks)
+  - `lua_scripts/dungeon_challenge_ui.lua` (erweitert: TrackerFrame, UpdateTrackerDisplay, Run-Handler)
+  - `CLAUDE.md` (aktualisiert)
+- **Branch**: `claude/add-active-run-ui-I0l5q`
+
 ### 2026-03-20
 
 #### [mod-dungeon-challenge] Feature: AIO Client UI ersetzt Gossip-Menüs
