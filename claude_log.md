@@ -24,27 +24,20 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
   - `src/server/game/Spells/Spell.cpp` (hook calls)
 - **Commit**: e99877b
 
-#### [mod-crafting-from-storage] Feature: Craft from Endless Storage
-
-- **Zeitstempel**: 2026-03-22
-- **Repo**: mod-crafting-from-storage (neu, AzerothCore C++ Modul)
-- **Änderungen**:
-  - Implementiert `OnPlayerCheckReagent` und `OnPlayerConsumeReagent` Hooks
-  - Fragt `custom_endless_storage` Tabelle ab für fehlende Reagenzien
-  - Inventar wird zuerst benutzt, Storage deckt den Rest
-  - Transparent für den Spieler — normales Berufs-UI funktioniert
-- **Betroffene Dateien**:
-  - `src/mod_crafting_from_storage.cpp`
-
-#### [mod-endless-storage] Fix: searchBox nil error + UI improvements
+#### [mod-endless-storage] Feature: Crafting Integration + UI Fixes
 
 - **Zeitstempel**: 2026-03-22
 - **Repo**: mod-endless-storage
 - **Änderungen**:
+  - C++ Crafting-Integration: Implementiert `OnPlayerCheckReagent` und `OnPlayerConsumeReagent` Hooks
+  - Fragt `custom_endless_storage` Tabelle ab für fehlende Reagenzien beim Craften
+  - Inventar wird zuerst benutzt, Storage deckt den Rest — transparent für den Spieler
   - Fix: `searchBox` und `logShown` Forward-Deklaration vor Nutzung in `SelectCategory`
   - Fensterhöhe von 440 auf 470px erhöht (+30px)
   - Log-Button von Kategorie-Panel nach oben rechts verschoben (neben Close-Button)
 - **Betroffene Dateien**:
+  - `src/mod_endless_storage_crafting.cpp` (neu)
+  - `src/mod_endless_storage_loader.cpp` (aktualisiert)
   - `lua_scripts/Storage/endless_storage_client.lua`
 
 ### 2026-03-21
