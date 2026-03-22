@@ -8,6 +8,37 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ### 2026-03-21
 
+#### [mod-loot-filter] Feature: Complete Loot Filter Module
+
+- **Zeitstempel**: 2026-03-21
+- **Repo**: mod-loot-filter
+- **Änderungen**:
+  - Neues AzerothCore-Modul für automatische Item-Filterung erstellt
+  - C++ Backend: PlayerScript mit OnPlayerLootItem Hook, In-Memory-Cache für Filterregeln, Auto-Sell (Vendor), Auto-Disenchant (Loot-Generierung), Auto-Delete
+  - 8 Filterbedingungen: Quality, Item Level, Sell Price, Item Class, Item Subclass, Cursed Status, Item ID, Name Contains
+  - 4 Aktionen: Keep (Whitelist), Sell, Disenchant, Delete
+  - Prioritätssystem: Regeln werden in Prioritätsreihenfolge ausgewertet, erster Match gewinnt
+  - AIO Lua UI: Scrollbare Regelliste, Dropdown-Menüs für Condition/Action, Preset-Buttons (Sell Grey, Sell White, DE Green, etc.), Minimap-Button
+  - SQL Schema: `character_loot_filter` (Regeln) + `character_loot_filter_settings` (Toggle + Statistiken)
+  - Chat Commands: `.lootfilter reload/toggle/stats`
+  - Integration mit mod-paragon-itemgen: Erkennt Cursed Items via Slot 11 Enchantment (920001, 950001-950099)
+  - Integration mit mod-auto-loot: Filtert Items die durch Auto-Loot aufgehoben werden
+  - Konfiguration: Enable, AllowSell, AllowDisenchant, AllowDelete, LogActions, MaxRulesPerChar
+  - CLAUDE.md erstellt
+- **Betroffene Dateien**:
+  - `src/LootFilter.h` (Header: Enums, Konstanten)
+  - `src/LootFilter.cpp` (Core: Filter-Logik, Hooks, Commands)
+  - `src/mod_loot_filter_loader.cpp` (Module Loader)
+  - `conf/loot_filter.conf.dist` (Konfiguration)
+  - `conf/conf.sh.dist` (SQL-Pfade)
+  - `include.sh` (Build-Integration)
+  - `data/sql/db-characters/loot_filter_tables.sql` (DB Schema)
+  - `Loot_Filter_LUA/LootFilter_Server.lua` (AIO Server)
+  - `Loot_Filter_LUA/LootFilter_Client.lua` (AIO Client UI)
+  - `CLAUDE.md` (Dokumentation)
+- **Branch**: `claude/mod-loot-filters-xdFB7`
+- **Commit**: f0a9aa5
+
 #### [mod-dungeon-challenge] Feature: Active Run Tracker UI
 
 - **Zeitstempel**: 2026-03-21
