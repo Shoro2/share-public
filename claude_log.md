@@ -24,20 +24,26 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
   - `src/server/game/Spells/Spell.cpp` (hook calls)
 - **Commit**: e99877b
 
-#### [mod-endless-storage] Feature: Crafting Integration + UI Fixes
+#### [mod-endless-storage] Feature: Crafting from Storage (AIO)
 
 - **Zeitstempel**: 2026-03-22
 - **Repo**: mod-endless-storage
 - **Änderungen**:
-  - C++ Crafting-Integration: Implementiert `OnPlayerCheckReagent` und `OnPlayerConsumeReagent` Hooks
-  - Fragt `custom_endless_storage` Tabelle ab für fehlende Reagenzien beim Craften
-  - Inventar wird zuerst benutzt, Storage deckt den Rest — transparent für den Spieler
+  - Crafting-Integration komplett auf Lua/AIO umgeschrieben (C++ Hooks entfernt)
+  - **Problem**: C++ Hooks griffen nie — WoW-Client blockt CMSG_CAST_SPELL wenn Inventar-Reagenzien fehlen
+  - **Lösung**: Client-seitig TradeSkillFrame via AIO hooken
+  - Client: `hooksecurefunc("TradeSkillFrame_SetSelection")` zeigt kombinierte Inventar+Storage Counts (gold-farbig)
+  - Client: "Create" / "Create All" Buttons werden überlagert wenn Storage-Reagenzien nötig sind
+  - Server: `ES.CraftFromStorage` Handler — konsumiert Reagenzien aus Inventar+Storage, castet triggered Spell
+  - Server: `ES.RequestStorageCounts` — sendet alle Storage-Mengen an Client bei TradeSkill-Öffnung
   - Fix: `searchBox` und `logShown` Forward-Deklaration vor Nutzung in `SelectCategory`
   - Fensterhöhe von 440 auf 470px erhöht (+30px)
   - Log-Button von Kategorie-Panel nach oben rechts verschoben (neben Close-Button)
 - **Betroffene Dateien**:
-  - `src/mod_endless_storage_crafting.cpp` (neu)
-  - `src/mod_endless_storage_loader.cpp` (aktualisiert)
+  - `lua_scripts/Storage/endless_storage_crafting_client.lua` (neu — AIO TradeSkill-Hooks)
+  - `lua_scripts/Storage/endless_storage_server.lua` (CraftFromStorage + RequestStorageCounts Handler)
+  - `src/mod_endless_storage_loader.cpp` (zurück auf leeren Loader)
+  - `src/mod_endless_storage_crafting.cpp` (entfernt)
   - `lua_scripts/Storage/endless_storage_client.lua`
 
 ### 2026-03-21
