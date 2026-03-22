@@ -8,6 +8,23 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ### 2026-03-22
 
+#### [mod-paragon-itemgen] Fix: AIO-based tooltip display for paragon stats and cursed items
+
+- **Zeitstempel**: 2026-03-22
+- **Repo**: mod-paragon-itemgen
+- **Problem**: Paragon item stats und Cursed-Marker wurden im Client-Tooltip nicht mehr angezeigt. Ursache: Die Tooltip-Anzeige hing vollständig von einer gepatchten Client-SpellItemEnchantment.dbc ab. Ohne gepatchte DBC kann der WoW 3.3.5-Client die Custom-Enchantment-IDs (900001-920001) nicht auflösen.
+- **Lösung**: Neues AIO-basiertes Tooltip-System:
+  - Server liest Enchantment-Daten direkt aus den Item-PROP_ENCHANTMENT-Slots (7-11)
+  - Dekodiert Stat-Typ + Amount aus der Enchantment-ID-Formel (900000 + statIndex * 1000 + amount)
+  - Sendet Daten per AIO an den Client bei Login und Inventar-Änderungen
+  - Client cached Daten nach Bag/Slot-Position und zeigt Custom-Tooltip-Zeilen an
+  - DBC-Text-Erkennung als Fallback für Nicht-Inventar-Tooltips (Loot, Quest, Vendor)
+- **Betroffene Dateien**:
+  - `Paragon_System_LUA/ItemGen_Server.lua` (kompletter Rewrite: AIO-Daten-Provider)
+  - `Paragon_System_LUA/ItemGen_Client.lua` (kompletter Rewrite: AIO-Cache + DBC-Fallback)
+  - `CLAUDE.md` (Dokumentation aktualisiert)
+- **Commit**: a8111bb
+
 #### [azerothcore-wotlk] Feature: Reagent Hooks for External Storage
 
 - **Zeitstempel**: 2026-03-22
