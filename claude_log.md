@@ -8,13 +8,20 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ### 2026-03-22
 
+#### [mod-paragon] Feat: Big+Small Spell-Paare für Stats über 255 Stacks
+
+- **Zeitstempel**: 2026-03-22
+- **Repo**: mod-paragon
+- **Lösung**: Zwei Spells pro Stat — "Small" (1x Wert/Stack) und "Big" (100x Wert/Stack via spell_dbc). Allokation N: big=N/100, small=N%100. Beispiel: 666 Str = 6×Big(500) + 66×Small(5) = 3330.
+- **Neue Dateien**: `data/sql/db-world/base/paragon_big_stat_spells.sql` (17 spell_dbc, IDs 100201-100227)
+- **Commit**: 4ef8c53
+
 #### [mod-paragon] Fix: uint8 Aura Stack Limit für Paragon Level und Stats
 
 - **Zeitstempel**: 2026-03-22
 - **Repo**: mod-paragon
-- **Problem**: WoW 3.3.5 Client rendert Aura-Stacks als uint8 (max 255). Bei Paragon Level 666 gab `GetAuraCount()` 154 zurück (666%256=154), was zu Punkte-Reset, falscher Level-Anzeige und Stats-Cap bei 255 führte.
-- **Lösung**: Level aus DB-Cache lesen, `AuraEffect::ChangeAmount()` für Stats > 255, Display-Stacks auf 255 gecapped, `conf_MaxStats` und Lua `MAX_POINTS` von 255 auf 666 erhöht.
-- **Betroffene Dateien**: `src/ParagonPlayer.cpp`, `Paragon_System_LUA/Paragon_Data.lua`, `Paragon_System_LUA/Paragon_Server.lua`
+- **Problem**: GetAuraCount() wraps bei 256 → Level-/Punkte-Reset. Stats auf 255 gedeckelt.
+- **Lösung**: Level aus DB-Cache, conf_MaxStats/MAX_POINTS auf 666, Level-Aura auf 255 gecapped.
 - **Commit**: 31de184
 
 #### [mod-paragon-itemgen] Fix: AIO-based tooltip display for paragon stats and cursed items
