@@ -8,6 +8,15 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ### 2026-03-22
 
+#### [mod-paragon] Fix: uint8 Aura Stack Limit für Paragon Level und Stats
+
+- **Zeitstempel**: 2026-03-22
+- **Repo**: mod-paragon
+- **Problem**: WoW 3.3.5 Client rendert Aura-Stacks als uint8 (max 255). Bei Paragon Level 666 gab `GetAuraCount()` 154 zurück (666%256=154), was zu Punkte-Reset, falscher Level-Anzeige und Stats-Cap bei 255 führte.
+- **Lösung**: Level aus DB-Cache lesen, `AuraEffect::ChangeAmount()` für Stats > 255, Display-Stacks auf 255 gecapped, `conf_MaxStats` und Lua `MAX_POINTS` von 255 auf 666 erhöht.
+- **Betroffene Dateien**: `src/ParagonPlayer.cpp`, `Paragon_System_LUA/Paragon_Data.lua`, `Paragon_System_LUA/Paragon_Server.lua`
+- **Commit**: 31de184
+
 #### [mod-paragon-itemgen] Fix: AIO-based tooltip display for paragon stats and cursed items
 
 - **Zeitstempel**: 2026-03-22
