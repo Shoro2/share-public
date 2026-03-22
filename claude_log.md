@@ -6,6 +6,47 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ## Änderungshistorie
 
+### 2026-03-22
+
+#### [azerothcore-wotlk] Feature: Reagent Hooks for External Storage
+
+- **Zeitstempel**: 2026-03-22
+- **Repo**: azerothcore-wotlk
+- **Änderungen**:
+  - 2 neue PlayerScript Hooks: `OnPlayerCheckReagent` und `OnPlayerConsumeReagent`
+  - Hook in `Spell::CheckItems()`: Fragt externe Quellen wenn Inventar nicht reicht
+  - Hook in `Spell::TakeReagents()`: Konsumiert aus externer Quelle vor `DestroyItemCount`
+  - Minimale Core-Änderungen: 4 Dateien, ~45 Zeilen
+- **Betroffene Dateien**:
+  - `src/server/game/Scripting/ScriptDefines/PlayerScript.h` (enum + virtual methods)
+  - `src/server/game/Scripting/ScriptDefines/PlayerScript.cpp` (ScriptMgr impl)
+  - `src/server/game/Scripting/ScriptMgr.h` (declarations)
+  - `src/server/game/Spells/Spell.cpp` (hook calls)
+- **Commit**: e99877b
+
+#### [mod-crafting-from-storage] Feature: Craft from Endless Storage
+
+- **Zeitstempel**: 2026-03-22
+- **Repo**: mod-crafting-from-storage (neu, AzerothCore C++ Modul)
+- **Änderungen**:
+  - Implementiert `OnPlayerCheckReagent` und `OnPlayerConsumeReagent` Hooks
+  - Fragt `custom_endless_storage` Tabelle ab für fehlende Reagenzien
+  - Inventar wird zuerst benutzt, Storage deckt den Rest
+  - Transparent für den Spieler — normales Berufs-UI funktioniert
+- **Betroffene Dateien**:
+  - `src/mod_crafting_from_storage.cpp`
+
+#### [mod-endless-storage] Fix: searchBox nil error + UI improvements
+
+- **Zeitstempel**: 2026-03-22
+- **Repo**: mod-endless-storage
+- **Änderungen**:
+  - Fix: `searchBox` und `logShown` Forward-Deklaration vor Nutzung in `SelectCategory`
+  - Fensterhöhe von 440 auf 470px erhöht (+30px)
+  - Log-Button von Kategorie-Panel nach oben rechts verschoben (neben Close-Button)
+- **Betroffene Dateien**:
+  - `lua_scripts/Storage/endless_storage_client.lua`
+
 ### 2026-03-21
 
 #### [mod-loot-filter] Feature: Complete Loot Filter Module
