@@ -6,6 +6,46 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ## Änderungshistorie
 
+### 2026-05-01
+
+#### [share-public] Docs: Modulare KI-Doku-Struktur (`AI_GUIDE.md` + `docs/`)
+
+- **Zeitstempel**: 2026-05-01
+- **Repo**: share-public
+- **Problem**: Die zentrale `share-public/CLAUDE.md` ist auf ~60 KB / 1284 Zeilen gewachsen und lässt sich von KI-Tools (Claude Code, etc.) nicht mehr zuverlässig per `Read`/`mcp__github__get_file_contents` einlesen — sie kippt regelmäßig in den 25 000-Token-Limit-Error. Zusätzlich treten `Stream idle timeout`-Fehler auf, wenn zu viele/große Tool-Aufrufe gebündelt werden.
+- **Lösung**: Neue modulare Doku-Struktur als bevorzugter Einstiegspunkt für KI-Sessions:
+  - `AI_GUIDE.md` (~6.4 KB) — Top-Level Navigation: Repo-Karte, Lese-Strategie, "wo finde ich was?".
+  - `docs/01-repos.md` — alle 7 Repos im Detail (mod-paragon, mod-paragon-itemgen, mod-loot-filter, mod-auto-loot, mod-endless-storage, azerothcore-wotlk, share-public).
+  - `docs/02-architecture.md` — Server-Architektur, 3 DBs, Modul-System, Hooks, Logging.
+  - `docs/03-spell-system.md` — SpellScripts, AuraScripts, vollständige Proc-Kette, korrigierte ProcFlags-Werte, DBC-System, BasePoints-Off-By-One.
+  - `docs/04-aio-framework.md` — AIO-APIs, Handler-Pattern, Re-Registrierungs-Falle, Code-Caching, Nachrichten-Limits.
+  - `docs/05-modules.md` — Tiefe pro Modul: Mechaniken, DB-Tabellen, Hooks, Konfig-Optionen.
+  - `docs/06-custom-ids.md` — Custom-IDs-Registry: Spells (100xxx, 900xxx), Enchants (900001-916666, 920001, 950001-950099), NPCs, Items, Slash-Commands, reservierte Bereiche.
+  - `docs/07-codestyle.md` — C++/SQL/Lua-Konventionen, CI-enforced Verbote, Commit-Format.
+  - `docs/08-ai-workflow.md` — Lese-Strategie zur Vermeidung der Token-/Timeout-Fehler, Schreib-Strategie (1 File pro Tool-Call), Branch-/Logging-Konventionen.
+  - `README.md` von 14 B auf ~2.7 KB erweitert: zeigt auf `AI_GUIDE.md`, listet alle docs/ und Repos.
+- **Strategie zur Vermeidung der Lese-Errors** (jetzt in `docs/08-ai-workflow.md` dokumentiert):
+  1. Jede `docs/`-Datei <12 KB → kein 25 K-Token-Error mehr beim Read.
+  2. KI-Tools fangen mit `AI_GUIDE.md` an, laden gezielt nur das relevante Kapitel.
+  3. Bei Notwendigkeit, die alte 60-KB-`CLAUDE.md` zu lesen: Truncation-Datei (`/root/.claude/projects/.../tool-results/*.txt`) per `jq -r '.[1].text' > /tmp/file.md` extrahieren, dann mit `Read offset/limit` chunkweise lesen.
+  4. Schreib-Seite: `mcp__github__create_or_update_file` einzeln pro Datei, nicht batched → kein `Stream idle timeout`.
+- **Backwards-Kompatibilität**: Alte `CLAUDE.md` bleibt unverändert (alle Modul-CLAUDE.md-Dateien linken weiterhin darauf). Neue Struktur ergänzt, nicht ersetzt.
+- **Betroffene Dateien**:
+  - `AI_GUIDE.md` (NEU)
+  - `docs/01-repos.md` (NEU)
+  - `docs/02-architecture.md` (NEU)
+  - `docs/03-spell-system.md` (NEU)
+  - `docs/04-aio-framework.md` (NEU)
+  - `docs/05-modules.md` (NEU)
+  - `docs/06-custom-ids.md` (NEU)
+  - `docs/07-codestyle.md` (NEU)
+  - `docs/08-ai-workflow.md` (NEU)
+  - `README.md` (erweitert)
+  - `claude_log.md` (dieser Eintrag)
+- **Branch**: `claude/review-markdown-docs-bTSgu`
+- **Commits**: `222607f` (AI_GUIDE), `72fb3c1` (01-repos), `f663592` (02-architecture), `0a7a586` (03-spell-system), `44b8a43` (04-aio), `9233be9` (05-modules), `2bf9bef` (06-ids), `7a194de` (07-codestyle), `6cfa549` (08-workflow), `89a4406` (README)
+- **Notizen**: Quellen für die Synthese: bestehende `CLAUDE.md` (60 KB, chunked gelesen), `claude_log.md` (35 KB), `claude_log_2026-04-27_custom_spells_review.md`, alle Modul-CLAUDE.md (azerothcore-wotlk, mod-paragon, mod-paragon-itemgen, mod-loot-filter, mod-endless-storage), `mod-auto-loot/src/mod_auto_loot.cpp` (kein CLAUDE.md vorhanden — Modul-Verhalten aus dem Source rekonstruiert). `Dcore Concept.pdf` wurde laut User als teilweise outdated eingeordnet und nicht im Detail einbezogen, ist aber im neuen `AI_GUIDE.md` als Konzept-Pitch verlinkt.
+
 ### 2026-04-28
 
 #### [mod-paragon] Fix: Life Leech triggert nicht für Caster mit Pets/Totems
