@@ -6,6 +6,18 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ## Änderungshistorie
 
+### 2026-04-28
+
+#### [mod-paragon] Fix: Life Leech triggert nicht für Caster mit Pets/Totems
+
+- **Zeitstempel**: 2026-04-28
+- **Repo**: mod-paragon
+- **Problem**: Der Life-Leech-Stat heilte nur, wenn der Spieler selbst der `attacker` in `Unit::DealDamage` war. Damit ging der Heal für alle Caster-Specs verloren, deren Hauptschadensquelle ein Pet oder Totem ist (Demonology Warlock mit Felguard, Frost Mage mit Water Elemental, Beast Mastery Hunter, sämtliche Totem-Shaman-Specs, Dancing Rune Weapon des Frost-DKs, Mind Control). Direkter Spell-Schaden des Spielers (Mage Fireball, Priest Smite, Warlock Shadow Bolt) hat funktioniert — der Lookup `attacker->ToPlayer()` matchte aber nicht für Pets/Totems, weil deren `attacker` ein `Creature` ist.
+- **Lösung**: `ParagonLifeLeech::OnDamage` löst jetzt über `Unit::GetCharmerOrOwnerPlayerOrPlayerItself()` den Player-Owner des Angreifers auf. Damit triggert Leech für alle vom Spieler kontrollierten Quellen (Player, Pet, Totem, Charmed Unit). Zusätzlich wird Selbst-/Friendly-Schaden (Fall-Damage, Environmental, eigene Spell-Splashes) über einen Victim-Owner-Check ausgeschlossen, damit der Spieler sich nicht aus eigenem HP-Verlust hochheilt.
+- **Betroffene Dateien**:
+  - `mod-paragon/src/ParagonPlayer.cpp` (`ParagonLifeLeech::OnDamage`)
+- **Branch**: `claude/fix-lifeleech-caster-0yYoZ`
+
 ### 2026-03-22
 
 #### [mod-paragon] Feat: Big+Small Spell-Paare für Stats über 255 Stacks
