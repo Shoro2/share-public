@@ -6,10 +6,14 @@
 -- werden.
 --
 -- Verwendung:
---   local Validate = dofile("lua_scripts/Dep_Validation/validation.lua")
+--   local Validate = Validate or require("Dep_Validation.validation")
 --   if not Validate.IsIntInRange(statId, 1, 17) then
 --       return Validate.Reject(player, "AllocatePoint", "statId out of range")
 --   end
+--
+-- Die Lib setzt zusätzlich `_G.Validate = M` am Ende, sodass Konsumenten ohne
+-- explizites require funktionieren — Eluna lädt Scripts alphabetisch aus
+-- `lua_scripts/`; `Dep_*` kommt vor allen anderen Modul-Folders.
 --
 -- Konsumenten (Stand 2026-05): mod-paragon (Paragon_Server.lua),
 -- mod-loot-filter (LootFilter_Server.lua), mod-endless-storage
@@ -176,5 +180,10 @@ function M.SelfTest()
     print("[Validate] SelfTest OK")
     return true
 end
+
+-- Globale Exposition, damit Konsumenten ohne explizites require funktionieren.
+-- Eluna lädt alle Scripts unter lua_scripts/ alphabetisch — `Dep_Validation/`
+-- kommt vor `Loot_Filter_LUA/`, `Paragon_System_LUA/`, `Storage/` etc.
+_G.Validate = M
 
 return M
