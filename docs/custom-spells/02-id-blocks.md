@@ -1,12 +1,15 @@
 # Custom Spells — ID-Block-Schema
 
-> **Status:** TODO (Phase 2). Master-Tabelle aus [`CustomSpells.md`](https://github.com/Shoro2/mod-custom-spells/blob/master/CustomSpells.md) Sektion "ID-Block-Schema" übernehmen.
-
 ## Schema
 
-TODO: Begründung der 900xxx-Range, Block-Größen pro Spec (33 IDs), Reservebereiche.
+- **Range**: 900xxx für Custom Spells. Wird durchgängig für SpellScripts, AuraScripts, Marker-Auras und Helper-Spells genutzt.
+- **Block-Größe**: 33 IDs pro Spec (33 × 3 Specs = 99 IDs/Klasse, plus 1 Slot Reserve am Ende).
+- **Sub-Allokation pro Spec**: typischerweise die ersten 5–10 IDs für sichtbare Player-Spells, danach Helper, Marker und Proc-Auras in derselben Range.
+- **Hunter / Mage Shared-Range**: erste 2 IDs (Hunter 900500–900501) bzw. 33 IDs (Mage Shared 900700–900732) für klassenweite Spells, die nicht spec-spezifisch sind.
+- **Druid bekommt 100er-Block** (901000–901099), weil 4 Specs (Balance, Feral Tank, Feral DPS, Resto). Feral wird absichtlich in Tank vs. DPS getrennt, weil die Mechaniken zu unterschiedlich sind.
+- **901100–901199**: Non-Class Global Spells (Cast-While-Moving, Extra Attack, AoE Proc, etc.).
 
-Querverweis: [`docs/06-custom-ids.md`](../06-custom-ids.md) für globale ID-Räume aller Mods.
+Querverweis: [`docs/06-custom-ids.md`](../06-custom-ids.md) für globale ID-Räume aller Mods (100xxx Paragon, 920xxx Cursed-Marker, 950xxx Passive-Enchants, etc.).
 
 ## Allokation
 
@@ -47,4 +50,21 @@ Querverweis: [`docs/06-custom-ids.md`](../06-custom-ids.md) für globale ID-Räu
 | Druid | Restoration | 901066–901099 | [druid-restoration](./specs/druid-restoration.md) |
 | — | Global / Non-Class | 901100–901199 | [global](./specs/global.md) |
 
-> Mage Shared und Mage Arcane teilen sich die Range 900700–900732 — Klärung in Phase 3.
+> Mage Shared und Mage Arcane teilen sich die Range 900700–900732 in `CustomSpells.md`. Klärung in Phase 3 (Inhalte aus Source/CustomSpells.md übertragen).
+
+## Reservierte Marker / Helper innerhalb der Blöcke
+
+Innerhalb jedes Spec-Blocks tauchen drei Sorten von IDs auf:
+
+| Typ | Beispiel | Zweck |
+|-----|----------|-------|
+| Player-Spell | 900106 Paragon Strike | sichtbar in Spellbook |
+| Marker-Aura | 900168 Prot: Revenge Damage | passive Trigger-Tag, `HasAura()`-Check |
+| Helper-Spell | 900174 Block Shield Burst | wird per `CastSpell(target, ID, true)` aus C++ getriggert |
+
+Marker und Helper sind nicht direkt cast-bar — sie tragen `SPELL_ATTR0_PASSIVE` (`0x40`) bzw. werden nur intern gerufen.
+
+## Externe Referenzen
+
+- Master-Source: [`mod-custom-spells/CustomSpells.md`](https://github.com/Shoro2/mod-custom-spells/blob/master/CustomSpells.md) Sektion "ID-Block-Schema" und "Aktuelle Belegung"
+- DBC-Status pro Klasse: `mod-custom-spells/CLAUDE.md` Sektion "DBC Status"
