@@ -263,3 +263,56 @@ Die in azerothcore-wotlk hinzugefügten Hooks `OnPlayerCheckReagent` und `OnPlay
 - `Spell::CheckItems()` fragt zusätzlich `custom_endless_storage` ab, wenn Inventar-Reagenzien fehlen
 - `Spell::TakeReagents()` konsumiert aus Storage, **bevor** `DestroyItemCount` greift
 - Player merkt nichts — Crafting "sieht" alle Materialien automatisch.
+
+---
+
+## mod-custom-spells
+
+**Loader-Funktion**: `Addmod_custom_spellsScripts()` in `src/mod_custom_spells_loader.cpp`.
+
+Custom Spell-Mechaniken in der 900xxx-ID-Range. Pro Klasse ein eigenes `.cpp`-File, das alle Spec-Blöcke registriert. Vollständige Spec-Doku als File-pro-Spec unter [`docs/custom-spells/`](./custom-spells/00-overview.md) — hier nur das Wesentliche für die Modul-Übersicht.
+
+### Drei Hook-Strategien
+
+1. **Eigene Custom-Spells** (eigene ID, eigener DBC-Eintrag, eigener `SpellScript` per `RegisterSpellScript`).
+2. **Hook auf Blizzard-Spells** — `spell_script_names` verknüpft eine bestehende ID (z. B. 1680 Whirlwind, 23881 Bloodthirst, 57823 Revenge) mit einer Custom-C++-Klasse. **Pflicht**: `HasAura()`-Check auf einen Marker-Spell, sonst greift der Effekt bei jedem Spieler.
+3. **AuraScript mit Proc** — passive Aura wird über `spell_proc` scharfgemacht. Filterung in C++ via `CheckProc`, weil DBC `EffectSpellClassMask` von `SPELL_AURA_PROC_TRIGGER_SPELL` ignoriert wird (siehe [03-spell-system.md](./03-spell-system.md#wichtig-dbc-effectspellclassmask-wird-ignoriert)).
+
+### Source-Layout (`mod-custom-spells/src/`)
+
+| File | Inhalt |
+|------|--------|
+| `mod_custom_spells_loader.cpp` | `Addmod_custom_spellsScripts()` Entry-Point |
+| `custom_spells.cpp` | Master-Switch (PlayerScript `OnPlayerSpellCast`) |
+| `custom_spells_common.h` | geteilte Konstanten/Includes |
+| `custom_spells_global.cpp` | Non-Class Spells 901100–901199 |
+| `custom_spells_<class>.cpp` | je eine Datei pro Klasse |
+
+### ID-Block-Schema (Kurzform)
+
+| Range | Inhalt |
+|-------|--------|
+| 900100–900199 | Warrior (Arms/Fury/Prot) |
+| 900200–900299 | Paladin (Holy/Prot/Ret) |
+| 900300–900399 | Death Knight (Blood/Frost/Unholy) |
+| 900400–900499 | Shaman (Ele/Enh/Resto) |
+| 900500–900599 | Hunter (Shared/BM/MM/Surv) |
+| 900600–900699 | Rogue (Assa/Combat/Sub) |
+| 900700–900799 | Mage (Shared/Arcane/Fire/Frost) |
+| 900800–900899 | Warlock (Affli/Demo/Destro) |
+| 900900–900999 | Priest (Disc/Holy/Shadow) |
+| 901000–901099 | Druid (Balance/Feral Tank/Feral DPS/Resto) |
+| 901100–901199 | Global / Non-Class |
+
+Vollständige Allokation pro Spec: [`custom-spells/02-id-blocks.md`](./custom-spells/02-id-blocks.md).
+
+### Integration mit anderen Modulen
+
+- **mod-paragon**: viele Custom-Spells skalieren mit `paragonLevel` (Aura-Stack 100000) — z. B. Paragon Strike (900106).
+- **azerothcore-wotlk**: benötigt Spell.dbc-Patches für eigene Custom-Spell-IDs (Tooltips). Server-seitig reicht `spell_dbc`-Override.
+- **Konfig**: `CustomSpells.Enable` (1/0) in `mod_custom_spells.conf.dist`.
+
+### Bekannte Issues
+
+- ProcFlags-Werte in der alten `CLAUDE.md` waren teils falsch — korrigiert in [`custom-spells/03-procs-and-flags.md`](./custom-spells/03-procs-and-flags.md) und im Mod-Repo unter `PROCFLAGS_REFERENCE.md`.
+- Mage Shared (900700–900732) und Mage Arcane (900700–900732) teilen sich dieselbe Range im Master-Plan — noch zu klären.

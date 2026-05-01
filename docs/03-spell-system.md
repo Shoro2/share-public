@@ -168,7 +168,9 @@ VALUES (900116, 0, 0, 0, 0, 0, 0x10, 1, 2, 0, 0, 0, 0, 100, 0, 0);
 | `PROC_FLAG_DONE_PERIODIC` | `0x40000` |
 | `PROC_FLAG_TAKEN_DAMAGE` | `0x100000` |
 
-Quellen: `azerothcore-wotlk/src/server/game/Spells/SpellMgr.h`. Vollständige Tabelle mit Korrekturen siehe `claude_log_2026-04-27_custom_spells_review.md` und `mod-custom-spells/PROCFLAGS_REFERENCE.md`.
+Quellen: `azerothcore-wotlk/src/server/game/Spells/SpellMgr.h`.
+
+> **Vollständige Tabelle** aller ProcFlags + häufige Kombinationen + dokumentierte Bug-Fixes: [`custom-spells/03-procs-and-flags.md`](./custom-spells/03-procs-and-flags.md). Historischer Kontext: `claude_log_2026-04-27_custom_spells_review.md`.
 
 ### Off-by-One BasePoints
 
