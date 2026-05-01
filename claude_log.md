@@ -8,6 +8,41 @@ Dieses Dokument dient als zentrale Historie aller Arbeitsschritte, Änderungen u
 
 ### 2026-05-01
 
+#### [mod-ale] Onboarding: Per-Repo-Doku-Konvention auf neues Repo angewendet
+
+- **Zeitstempel**: 2026-05-01
+- **Repo**: mod-ale
+- **Kontext**: Repo `shoro2/mod-ale` ist neu in der GitHub-MCP-Authorization. Es ist ein Fork von [Eluna](https://github.com/ElunaLuaEngine/Eluna), divergent unter dem Namen **ALE (AzerothCore Lua Engine)**, und stellt die Lua-/MoonScript-Skript-Runtime für alle anderen Lua-/AIO-basierten Module dieses Projekts bereit (mod-paragon, mod-paragon-itemgen, mod-loot-filter, mod-endless-storage sowie das `share-public/AIO_Server`-Framework).
+- **Änderungen**:
+  - 6-File-Doku-Konvention angewendet (analog Phase A/B): `INDEX.md`, `CLAUDE.md`, `data_structure.md`, `functions.md`, `log.md`, `todo.md`.
+  - `CLAUDE.md` betont die Engine-Rolle (Infrastruktur, kein Gameplay-Modul) und listet alle Konsumenten + Konfig-Optionen aus `mod_ale.conf.dist` und `CMakeLists.txt`.
+  - `data_structure.md` markiert die KI-Lese-Risiko-Files: `LuaFunctions.cpp` (~96 KB), `LuaEngine.cpp` (~54 KB), `Hooks.h` (~30 KB), `LuaEngine.h` (~30 KB), `ALE_SC.cpp` (~40 KB) — symbolisch via `grep` durchsuchen, nicht am Stück lesen.
+  - `functions.md` dokumentiert Hook-Klassen (Server/Player/Creature/GameObject/Item/Spell/Group/Guild/Map/BG), die wichtigsten Lua-Globals (`*DBQuery`/`*DBExecute`, Player-API), `EventMgr`, `BytecodeCache`, `FileWatcher`, Reload-Verhalten, Konfig-Wirkung und das Sicherheits-Pattern um die fehlenden Prepared Statements (Validation-Lib + atomare Single-UPDATE-Pattern wie im M2-Fix).
+- **Validation-Lib NICHT eingebaut**: ALE selbst stellt nur die `*DBQuery`/`*DBExecute`-API bereit und macht keine eigenen Calls mit player-supplied Input. Validation ist Sache der Konsumenten — bereits in `mod-paragon`, `mod-loot-filter`, `mod-endless-storage` umgesetzt.
+- **Cross-Refs ergänzt**:
+  - `share-public/AI_GUIDE.md`: mod-ale in Repo-Karte aufgenommen, als Build-/Laufzeit-Abhängigkeit der anderen Lua-Module markiert; Lese-Risiko-Files in der "Vermeide direkte Volltext-Reads"-Liste ergänzt.
+  - `share-public/claude_log.md`: dieser Eintrag.
+- **Betroffene Dateien**:
+  - `mod-ale/INDEX.md` (NEU)
+  - `mod-ale/CLAUDE.md` (NEU)
+  - `mod-ale/data_structure.md` (NEU)
+  - `mod-ale/functions.md` (NEU)
+  - `mod-ale/log.md` (NEU)
+  - `mod-ale/todo.md` (NEU)
+  - `share-public/AI_GUIDE.md` (Repo-Karte erweitert)
+  - `share-public/claude_log.md` (dieser Eintrag)
+- **Branches**:
+  - `mod-ale`: `claude/mod-ale-onboarding-uElRt`
+  - `share-public`: `claude/wow-server-docs-bugfix-uElRt`
+- **Commits** (mod-ale):
+  - `704cc13` — docs: add INDEX.md
+  - `b2345d6` — docs: add CLAUDE.md
+  - `20dfb83` — docs: add data_structure.md
+  - `d412502` — docs: add functions.md
+  - `8eac771` — docs: add log.md
+  - `0d896be` — docs: add todo.md
+- **Notizen**: Stand der Quelle ist `master` @ `1ab53ba`. Aktuell **kein Custom-Patch** — reine Spiegelung des Upstreams. Falls projektspezifische Änderungen in der Engine nötig werden, gehören sie als Commit oben in `mod-ale/log.md` und cross-vermerkt hier.
+
 #### [mod-paragon] Fix: Race-Condition C++ ↔ Lua bei Paragon-Punkt-Allokation (M2)
 
 - **Zeitstempel**: 2026-05-01
