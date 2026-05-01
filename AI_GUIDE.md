@@ -5,7 +5,7 @@
 
 ## TL;DR — Was ist das Projekt?
 
-Ein **Custom WoW-Server für WotLK 3.3.5a** auf AzerothCore-Basis mit mehreren eigenen Modulen rund um ein **Paragon-Progressionssystem** (Post-Level-80 XP/Level/Stats), **automatische Item-Enchantments**, **Loot-Filter**, **Auto-Loot** und **Material-Storage**. Die Server↔Client-Kommunikation der UIs läuft über das **AIO-Framework** (Eluna/Lua + WoW-Addon).
+Ein **Custom WoW-Server für WotLK 3.3.5a** auf AzerothCore-Basis mit mehreren eigenen Modulen rund um ein **Paragon-Progressionssystem** (Post-Level-80 XP/Level/Stats), **automatische Item-Enchantments**, **Loot-Filter**, **Auto-Loot** und **Material-Storage**. Die Server↔Client-Kommunikation der UIs läuft über das **AIO-Framework** (ALE/Lua + WoW-Addon).
 
 Das Repo `share-public` ist die **zentrale Wissensbasis**: hier liegen Doku, Custom-IDs, DBC-Dateien, DB-Extrakte, Python-Tools, das AIO-Framework und der **Änderungslog** (`claude_log.md`) für alle Repos.
 
@@ -17,11 +17,14 @@ Der grundlegende Konzept-Pitch (mit teils veralteten Details) liegt als `Dcore C
 |------|---------|-------|--------|
 | [`share-public`](https://github.com/Shoro2/share-public) | MD/Lua/Py | Doku, Tools, AIO-Framework, DBC, Logs | dieses Repo |
 | [`azerothcore-wotlk`](https://github.com/Shoro2/azerothcore-wotlk) | C++17 | Server-Core (worldserver, authserver) | [docs/02](./docs/02-architecture.md) |
+| [`mod-ale`](https://github.com/Shoro2/mod-ale) | C++/Lua | **Lua-Engine** (Eluna-Fork "ALE") — Skript-Runtime für alle Lua/AIO-Module | [`mod-ale/CLAUDE.md`](https://github.com/Shoro2/mod-ale/blob/master/CLAUDE.md) |
 | [`mod-paragon`](https://github.com/Shoro2/mod-paragon) | C++/Lua | Account-XP + 17-Stat-System nach LV80 | [docs/05](./docs/05-modules.md#mod-paragon) |
 | [`mod-paragon-itemgen`](https://github.com/Shoro2/mod-paragon-itemgen) | C++/Lua | Auto-Enchantments auf Loot (5 Slots, Cursed) | [docs/05](./docs/05-modules.md#mod-paragon-itemgen) |
 | [`mod-loot-filter`](https://github.com/Shoro2/mod-loot-filter) | C++/Lua | Regelbasiertes Auto-Sell/Disenchant/Delete | [docs/05](./docs/05-modules.md#mod-loot-filter) |
 | [`mod-auto-loot`](https://github.com/Shoro2/mod-auto-loot) | C++ | AOE-Looting im 10-yd-Radius | [docs/05](./docs/05-modules.md#mod-auto-loot) |
 | [`mod-endless-storage`](https://github.com/Shoro2/mod-endless-storage) | Lua/SQL | AIO-UI für unbegrenztes Material-Lager + Crafting-Reagenz-Hooks | [docs/05](./docs/05-modules.md#mod-endless-storage) |
+
+`mod-ale` ist eine **Build- und Laufzeit-Abhängigkeit** für alle Lua/AIO-Module (mod-paragon, mod-paragon-itemgen, mod-loot-filter, mod-endless-storage sowie das `share-public/AIO_Server`).
 
 Weitere im Code referenzierte, **nicht in diesem Scope liegende** Repos: `mod-custom-spells` (Custom SpellScripts) und `mod-dungeon-challenge` (Mythic+-Style). Beide sind aktuell **nicht** Teil deiner GitHub-MCP-Berechtigungen — nur lesend über Logs/Refs sichtbar.
 
@@ -53,6 +56,7 @@ Im Repo gibt es einige Dateien, deren Größe an oder über dem Lese-Limit der `
    - `claude_log.md` (~35 KB) — ok zu lesen, aber bei Bedarf per Datum/Section filtern.
    - `Dcore Concept.pdf` (~190 KB binär) — nur zur grundsätzlichen Einordnung; teilweise veraltet.
    - `mysqldbextracts/mysql_column_list_all.txt` — nur per `grep` für konkrete Tabellen abfragen.
+   - `mod-ale/src/LuaEngine/LuaFunctions.cpp` (~96 KB), `LuaEngine.cpp` (~54 KB), `Hooks.h` (~30 KB) — symbolisch via `grep`/`search_code` durchsuchen.
 4. **DBC-Dateien sind binär** (WDBC). Nicht direkt lesen — via Python-Tool oder DB-Override (`*_dbc` Tabellen) bearbeiten.
 
 ## Kern-Workflow für KI-Sessions
@@ -68,7 +72,7 @@ Im Repo gibt es einige Dateien, deren Größe an oder über dem Lese-Limit der `
 
 - **WoW-Version**: 3.3.5a (WotLK), Build 12340
 - **Sprache Core/Module**: C++17, CMake, MySQL/MariaDB
-- **Sprache UI/Tools**: Lua (Eluna + WoW Client) + Python 3 (DBC-Tools)
+- **Sprache UI/Tools**: Lua (ALE/Eluna-Fork + WoW Client) + Python 3 (DBC-Tools)
 - **Drei DBs**: `acore_auth`, `acore_characters`, `acore_world`
 - **Ports**: 3724 (auth), 8085 (world)
 - **Custom-Spell-IDs**: ab 100000 (Auras), 900000+ (Custom-Effekte), 920001 (Cursed-Marker), 950001–950099 (Passives)
