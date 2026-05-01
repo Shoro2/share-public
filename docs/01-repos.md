@@ -79,3 +79,16 @@ Alle 7 Repos im Detail. Branch-Hinweis: KI-Sessions arbeiten pro Repo auf einem 
 - **Crafting-Integration**: implementiert die in azerothcore-wotlk hinzugefügten `OnPlayerCheckReagent` / `OnPlayerConsumeReagent` Hooks. Inventar wird zuerst genutzt, Storage deckt den Rest — transparent fürs Crafting.
 - **DB-Tabelle** (acore_characters): `custom_endless_storage` (character_id, item_entry, item_subclass, item_class, amount).
 - **AIO-Spezifika**: Globale Handler-Tabelle (`MY_Handlers`-Pattern) wegen Re-Registrierungs-Beschränkung. Item-Info-Retry-Timer für ungecachte Items.
+
+## mod-custom-spells — Custom Spell Effekte
+
+- **Zweck**: Custom Spell-Mechaniken via SpellScript / AuraScript / OnPlayerSpellCast für Spell-IDs in der 900xxx-Range. Pro Klasse ein eigenes `.cpp`-File, organisiert in Spec-Blöcken.
+- **Drei Hook-Wege**:
+  - **Eigene Custom-Spells** mit eigener ID + DBC-Eintrag + SpellScript
+  - **Hooks auf Blizzard-Spells** (z. B. Whirlwind, Bloodthirst, Revenge) via `spell_script_names` — Pflicht: `HasAura()`-Check auf Marker
+  - **AuraScript mit Proc** über `spell_proc` (filtert in C++ via `CheckProc`, weil DBC `EffectSpellClassMask` ignoriert wird)
+- **ID-Blocks**: 33 IDs pro Spec, 900100–901099 für Klassen-Specs, 901100–901199 für Non-Class Globals. Detail siehe [`docs/custom-spells/02-id-blocks.md`](./custom-spells/02-id-blocks.md).
+- **Integration mit mod-paragon**: viele Custom-Spells skalieren mit `paragonLevel` (Aura-Stack 100000) — z. B. `damage = 666 + AP × 0.66 × (1 + paragonLevel × 0.01)`.
+- **DBC-Pflege**: jeder Custom-Spell braucht `spell_dbc`-Override + ggf. `spell_proc`-Eintrag. Off-by-One BasePoints (`real_value - 1`) beachten.
+- **Konfig**: `CustomSpells.Enable` (1/0).
+- **Detail-Doku**: [`docs/custom-spells/`](./custom-spells/00-overview.md) — 33 Spec-Files plus Architektur-, ID-Block-, Procs-, Adding-a-Spell-Guides.

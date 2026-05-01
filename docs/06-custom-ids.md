@@ -20,6 +20,10 @@ Kompakte Übersicht aller projekt-spezifischen IDs. Bevor neue IDs vergeben werd
 
 ### 900xxx — Custom Spells (mod-custom-spells)
 
+> **Detail-Doku**: [`custom-spells/02-id-blocks.md`](./custom-spells/02-id-blocks.md) hat die vollständige Allokationstabelle pro Spec, jeder Spec hat ein eigenes File unter [`custom-spells/specs/`](./custom-spells/00-overview.md).
+
+Kurzübersicht der wichtigsten cross-referenzierten Spells:
+
 | ID | Name | Typ | Effekt |
 |----|------|-----|--------|
 | 900106 | Paragon Strike | SpellScript | SCHOOL_DAMAGE: 666 + 66% AP, +1%/Paragon-Level |
@@ -51,6 +55,9 @@ Kompakte Übersicht aller projekt-spezifischen IDs. Bevor neue IDs vergeben werd
 | ID | Name | ScriptName | Zweck |
 |----|------|------------|-------|
 | 900100 | Paragon NPC | `npc_paragon` | Gossip: Info + Punkte-Reset |
+| 900333 | Frost Wyrm | `npc_custom_frost_wyrm` | DK Frost Custom-Summon |
+| 900436 | Spirit Wolf | (mod-custom-spells) | Shaman Enhance Wolf-Summon-Proc |
+| 901066 | Healing Treant | (mod-custom-spells) | Druid Resto HoT-Treant-Proc |
 
 ## Enchantment-IDs (in `spellitemenchantment_dbc`)
 
