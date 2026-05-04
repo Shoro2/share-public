@@ -12,6 +12,7 @@ Dieser Ordner ist die kuratierte, entdeckungsfreundliche Sicht auf das Custom-Sp
 | [02-id-blocks.md](./02-id-blocks.md) | ID-Schema 900xxx + Allokationstabelle aller Specs |
 | [03-procs-and-flags.md](./03-procs-and-flags.md) | `spell_proc`-Setup, ProcFlags, SpellFamilyFlags-Verifikation, Off-by-One BasePoints |
 | [04-adding-a-spell.md](./04-adding-a-spell.md) | Step-by-Step Rezept für neue Custom Spells |
+| [05-complex-spells.md](./05-complex-spells.md) | Querschnitts-Themen: Rekursion, Target-Caps, ICDs, Custom-NPCs, Owner→Pet, OnRemove-Detection, Channel/Cast, Client-Patches |
 
 ## Spec-Kataloge
 
@@ -54,3 +55,4 @@ Dieser Ordner ist die kuratierte, entdeckungsfreundliche Sicht auf das Custom-Sp
 - **Kebab-Case Filenames**, keine Number-Prefixes in `specs/` (Reihenfolge irrelevant, Renames vermeiden).
 - **Status-Marker** pro Spell: `Live`, `WIP`, `TODO`.
 - **Implementation Notes** nur für nicht-triviale Spells (Procs, Formeln, Edge Cases). Trivials bleiben in der Tabelle.
+- **Architektonisch heikle Spells** sind in [`05-complex-spells.md`](./05-complex-spells.md) gesammelt — dort stehen die wiederkehrenden Pattern (Rekursionsschutz, Target-Caps, ICDs, Custom-NPCs etc.) zentral.

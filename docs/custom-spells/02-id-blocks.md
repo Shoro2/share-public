@@ -5,7 +5,7 @@
 - **Range**: 900xxx für Custom Spells. Wird durchgängig für SpellScripts, AuraScripts, Marker-Auras und Helper-Spells genutzt.
 - **Block-Größe**: 33 IDs pro Spec (33 × 3 Specs = 99 IDs/Klasse, plus 1 Slot Reserve am Ende).
 - **Sub-Allokation pro Spec**: typischerweise die ersten 5–10 IDs für sichtbare Player-Spells, danach Helper, Marker und Proc-Auras in derselben Range.
-- **Hunter / Mage Shared-Range**: erste 2 IDs (Hunter 900500–900501) bzw. 33 IDs (Mage Shared 900700–900732) für klassenweite Spells, die nicht spec-spezifisch sind.
+- **Hunter / Mage Shared-Range**: erste 2 IDs (Hunter 900500–900501) bzw. eine ID (Mage 900700) für klassenweite Spells, die nicht spec-spezifisch sind.
 - **Druid bekommt 100er-Block** (901000–901099), weil 4 Specs (Balance, Feral Tank, Feral DPS, Resto). Feral wird absichtlich in Tank vs. DPS getrennt, weil die Mechaniken zu unterschiedlich sind.
 - **901100–901199**: Non-Class Global Spells (Cast-While-Moving, Extra Attack, AoE Proc, etc.).
 
@@ -34,10 +34,13 @@ Querverweis: [`docs/06-custom-ids.md`](../06-custom-ids.md) für globale ID-Räu
 | Rogue | Assassination | 900600–900632 | [rogue-assassination](./specs/rogue-assassination.md) |
 | Rogue | Combat | 900633–900665 | [rogue-combat](./specs/rogue-combat.md) |
 | Rogue | Subtlety | 900666–900699 | [rogue-subtlety](./specs/rogue-subtlety.md) |
-| Mage | Shared | 900700–900732 | [mage-shared](./specs/mage-shared.md) |
-| Mage | Arcane | 900700–900732 | [mage-arcane](./specs/mage-arcane.md) |
-| Mage | Fire | 900733–900765 | [mage-fire](./specs/mage-fire.md) |
-| Mage | Frost | 900766–900799 | [mage-frost](./specs/mage-frost.md) |
+| Mage | Shared | 900700 | [mage-shared](./specs/mage-shared.md) |
+| Mage | Arcane | 900700–900713 | [mage-arcane](./specs/mage-arcane.md) |
+| Mage | _frei_ | 900714–900732 | (reserviert) |
+| Mage | Fire | 900733–900740 | [mage-fire](./specs/mage-fire.md) |
+| Mage | _frei_ | 900741–900765 | (reserviert) |
+| Mage | Frost | 900766–900774 | [mage-frost](./specs/mage-frost.md) |
+| Mage | _frei_ | 900775–900799 | (reserviert) |
 | Warlock | Affliction | 900800–900832 | [warlock-affliction](./specs/warlock-affliction.md) |
 | Warlock | Demonology | 900833–900865 | [warlock-demonology](./specs/warlock-demonology.md) |
 | Warlock | Destruction | 900866–900899 | [warlock-destruction](./specs/warlock-destruction.md) |
@@ -50,7 +53,7 @@ Querverweis: [`docs/06-custom-ids.md`](../06-custom-ids.md) für globale ID-Räu
 | Druid | Restoration | 901066–901099 | [druid-restoration](./specs/druid-restoration.md) |
 | — | Global / Non-Class | 901100–901199 | [global](./specs/global.md) |
 
-> Mage Shared und Mage Arcane teilen sich die Range 900700–900732 in `CustomSpells.md`. Klärung in Phase 3 (Inhalte aus Source/CustomSpells.md übertragen).
+> **Mage-Layout**: Range-Konflikt zwischen Shared und Arcane aufgelöst: 900700 ist der einzelne Shared-Spell (Channeling Evocation, alle 3 Specs), 900700–900713 ist der Arcane-Block insgesamt (also Shared-ID 900700 plus 13 Arcane-Spells 900701–900713). Fire 900733–900740, Frost 900766–900774 — die Lücken dazwischen sind reserviert für spätere Erweiterungen.
 
 ## Reservierte Marker / Helper innerhalb der Blöcke
 
