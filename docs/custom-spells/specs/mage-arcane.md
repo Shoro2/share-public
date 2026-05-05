@@ -2,22 +2,22 @@
 
 **Source:** [`custom_spells_mage.cpp`](https://github.com/Shoro2/mod-custom-spells/blob/master/src/custom_spells_mage.cpp)
 **ID-Range:** 900700-900713
-**Status:** Nicht getestet (importiert aus `CustomSpells.md`)
+**Status:** Not tested (imported from `CustomSpells.md`)
 
-> 900700 ist der spec-übergreifende Evocation-Buff, im eigenen File [mage-shared](./mage-shared.md) dokumentiert. Der Arcane-Block 900701–900713 enthält die Arcane-spezifischen Spells.
+> 900700 is the spec-wide Evocation buff, documented in its own file [mage-shared](./mage-shared.md). The Arcane block 900701–900713 contains the Arcane-specific spells.
 
-| # | Spell ID | Effekt | Ansatz | Status | Details |
+| # | Spell ID | Effect | Approach | Status | Details |
 |---|----------|--------|--------|--------|---------|
-| 1 | 900701 | Mana regen +2% per missing mana % | C++ | nicht getestet | Dynamische Mana-Regen-Skalierung. `PlayerScript::OnUpdateManaRegen` oder periodic Aura-Tick: Berechne fehlende Mana% → setze Regen-Bonus = fehlende% × 2%. Bei 50% Mana fehlen → +100% Mana Regen. Bei 90% fehlen → +180%. Passive Aura mit `SPELL_AURA_OBS_MOD_POWER` oder C++ Hook auf `Player::RegenerateMana()`. Sehr starke Mana-Sustain-Mechanik. |
-| 2 | 900702 | Arcane Barrage +50% damage | DBC | nicht getestet | Passive Aura: `SPELL_AURA_ADD_PCT_MODIFIER` +50% auf Arcane Barrage (44781). SpellFamilyName=3, SpellFamilyFlags für Barrage. Einfacher Damage-Multiplikator. |
-| 3 | 900703 | Arcane Barrage +9 targets | DBC/C++ | nicht getestet | Arcane Barrage (44781) trifft normalerweise 3 Targets. DBC: `MaxAffectedTargets` auf 10+ setzen. Oder C++: `OnObjectAreaTargetSelect` → Target-Limit entfernen. |
-| 4 | 900704 | Arcane Blast cast time -50% | DBC | nicht getestet | Passive Aura: `SPELL_AURA_ADD_PCT_MODIFIER` (SPELLMOD_CASTING_TIME) -50% auf Arcane Blast (42897). Base Cast Time 2.5s → 1.25s. Stapelt mit Arcane Blast Debuff (noch schneller mit Stacks). |
-| 5 | 900705 | Arcane Blast +9 targets | C++ | nicht getestet | Arcane Blast (42897) ist Single-Target. SpellScript `AfterHit` → Chain zu 9 weiteren Feinden im Radius. CastSpell(AB-Damage-Helper, triggered=true). Braucht Helper-Spell (z.B. 900710). |
-| 6 | 900706 | Arcane Charges stack up to 8 | DBC/C++ | nicht getestet | Arcane Blast Debuff (36032) stackt normalerweise bis 4. DBC: `StackAmount` auf 8 setzen. C++: Falls hardcoded → `AuraScript::OnStackChange` → Allow stacks >4. Jeder Stack erhöht AB Damage +15% und Mana Cost +150% (Base-Werte). 8 Stacks = +120% Damage, +1200% Mana Cost. Balancing beachten! |
-| 7 | 900707 | Arcane Explosion generates 1 Arcane Charge (like Arcane Blast) | C++ | nicht getestet | Arcane Explosion (42921) ist AoE Instant. SpellScript `AfterCast` → ApplyAura(Arcane Blast Debuff 36032, 1 Stack) auf Caster. Gleiche Mechanik wie AB aber ohne Consume. AE wird zu einem AoE Arcane Charge Generator. |
-| 8 | 900708 | Below 30% health → activate Mana Shield + restore all mana | C++ | nicht getestet | Passive Proc-Aura: `PROC_FLAG_TAKEN_DAMAGE` (0x4000). `HandleProc`: Wenn Health <30% → CastSpell(Mana Shield 43020, triggered=true) + SetPower(MANA, MaxMana). ICD empfohlen (z.B. 60s) um Abuse zu verhindern. Sehr starke Überlebens-Mechanik: Volle Mana + Shield bei Low HP. |
-| 9 | 900709 | Blink target location selection | C++ | nicht getestet | Blink (1953) teleportiert normalerweise 20yd vorwärts. Ansatz: Override Blink → Click-to-Blink mit Target-Location. SpellScript `HandleDummy`: Lese SpellDestination → Teleport Caster dorthin (max Range z.B. 40yd). DBC: Spell Target-Type auf `TARGET_DEST_DEST` ändern. Braucht Client-seitig: Spell zeigt Ground-Target-Cursor. Vergleichbar mit Heroic Leap Targeting. |
+| 1 | 900701 | Mana regen +2% per missing mana % | C++ | not tested | Dynamic Mana-Regen-scaling. `PlayerScript::OnUpdateManaRegen` or periodic aura tick: Compute missing mana% → set regen bonus = missing% × 2%. At 50% mana missing → +100% Mana Regen. At 90% missing → +180%. Passive aura with `SPELL_AURA_OBS_MOD_POWER` or C++ hook on `Player::RegenerateMana()`. Very strong mana sustain mechanic. |
+| 2 | 900702 | Arcane Barrage +50% damage | DBC | not tested | Passive aura: `SPELL_AURA_ADD_PCT_MODIFIER` +50% on Arcane Barrage (44781). SpellFamilyName=3, SpellFamilyFlags for Barrage. Simple damage multiplier. |
+| 3 | 900703 | Arcane Barrage +9 targets | DBC/C++ | not tested | Arcane Barrage (44781) normally hits 3 Targets. DBC: set `MaxAffectedTargets` to 10+. Or C++: `OnObjectAreaTargetSelect` → remove target limit. |
+| 4 | 900704 | Arcane Blast cast time -50% | DBC | not tested | Passive aura: `SPELL_AURA_ADD_PCT_MODIFIER` (SPELLMOD_CASTING_TIME) -50% on Arcane Blast (42897). Base Cast Time 2.5s → 1.25s. Stacks with Arcane Blast Debuff (even faster with stacks). |
+| 5 | 900705 | Arcane Blast +9 targets | C++ | not tested | Arcane Blast (42897) is single-target. SpellScript `AfterHit` → chain to 9 additional enemies in range. CastSpell(AB-Damage-Helper, triggered=true). Needs a helper spell (e.g. 900710). |
+| 6 | 900706 | Arcane Charges stack up to 8 | DBC/C++ | not tested | Arcane Blast Debuff (36032) normally stacks up to 4. DBC: set `StackAmount` to 8. C++: If hardcoded → `AuraScript::OnStackChange` → Allow stacks >4. Each stack increases AB damage +15% and mana cost +150% (base values). 8 Stacks = +120% Damage, +1200% Mana Cost. Watch balancing! |
+| 7 | 900707 | Arcane Explosion generates 1 Arcane Charge (like Arcane Blast) | C++ | not tested | Arcane Explosion (42921) is AoE instant. SpellScript `AfterCast` → ApplyAura(Arcane Blast Debuff 36032, 1 stack) on the caster. Same mechanic as AB but without consumption. AE becomes a AoE Arcane Charge Generator. |
+| 8 | 900708 | Below 30% health → activate Mana Shield + restore all mana | C++ | not tested | Passive Proc aura: `PROC_FLAG_TAKEN_DAMAGE` (0x4000). `HandleProc`: If health <30% → CastSpell(Mana Shield 43020, triggered=true) + SetPower(MANA, MaxMana). ICD recommended (e.g. 60s) to prevent abuse. Very strong survival mechanic: Full mana + shield at low HP. |
+| 9 | 900709 | Blink target location selection | C++ | not tested | Blink (1953) normally teleports 20yd forward. Approach: Override Blink → Click-to-Blink with a target location. SpellScript `HandleDummy`: Read SpellDestination → teleport the caster there (max range e.g. 40yd). DBC: change spell target type to `TARGET_DEST_DEST`. Client-side: spell shows a ground target cursor. Comparable to Heroic Leap targeting. |
 
 ---
 
-> Original-Quelle: [`mod-custom-spells/CustomSpells.md`](https://github.com/Shoro2/mod-custom-spells/blob/master/CustomSpells.md) Sektion "Mage — Arcane (900700-900732)".
+> Original source: [`mod-custom-spells/CustomSpells.md`](https://github.com/Shoro2/mod-custom-spells/blob/master/CustomSpells.md) section "Mage — Arcane (900700-900732)".

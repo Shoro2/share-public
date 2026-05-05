@@ -1,99 +1,99 @@
-# Phase A+B Wrap: Per-Repo Doku-Konvention (2026-05-01)
+# Phase A+B Wrap: Per-Repo doc convention (2026-05-01)
 
-> Detail-Log zur Multi-Repo-Doku-Restrukturierung. Verlinkt aus `claude_log.md`.
+> Detail log for the multi-repo doc restructuring. Linked from `claude_log.md`.
 
-## Ziel
+## Goal
 
-Pro Modul-/Core-Repo (also alle ausser `share-public`) die gleiche schlanke 6-File-Doku-Konvention etablieren, damit KI-Tools (Claude Code, etc.) die Projektdaten zuverlässig lesen können — ohne 25 K-Token-Limit-Errors oder Stream-Idle-Timeouts.
+Establish the same lean 6-file doc convention in every module/core repo (i.e. all except `share-public`) so AI tools (Claude Code, etc.) can read project data reliably — without 25 K-token-limit errors or stream idle timeouts.
 
-## Konvention pro Repo
+## Convention per repo
 
-| Datei | Größe | Zweck |
+| File | Size | Purpose |
 |-------|------:|-------|
-| `INDEX.md` | <1 KB | Einstiegspunkt für KI — listet Geschwister-Files mit Größe + Zweck |
-| `CLAUDE.md` | < 8 KB | **Was/Warum** — Zweck, Rolle, Custom-IDs, DB-Tabellen-Bezüge (kein Mechanik-Detail!) |
-| `data_structure.md` | < 6 KB | exakte Folder/File-Auflistung mit Einzeiler-Beschreibungen |
-| `functions.md` | < 15 KB | **Wie** — Mechaniken, Hooks, Funktions-Signaturen, AIO-Handler, Konfig-Optionen |
-| `log.md` | wächst | minimaler Commit-Log (1 Zeile pro Commit) |
-| `todo.md` | klein | offene Aufgaben mit Priorität (`(hoch)` / `(mittel)` / `(niedrig)`) |
+| `INDEX.md` | <1 KB | entry point for AI — lists sibling files with size + purpose |
+| `CLAUDE.md` | < 8 KB | **What/why** — purpose, role, custom IDs, DB table references (no mechanics detail!) |
+| `data_structure.md` | < 6 KB | exact folder/file listing with one-liner descriptions |
+| `functions.md` | < 15 KB | **How** — mechanics, hooks, function signatures, AIO handlers, config options |
+| `log.md` | grows | minimal commit log (1 line per commit) |
+| `todo.md` | small | open tasks with priority (`(high)` / `(medium)` / `(low)`) |
 
-Cross-Cutting bleibt zentral in `share-public`:
-- `share-public/claude_log.md` = projekt-weite Historie + Phasenpläne
-- `share-public/AI_GUIDE.md` + `docs/` = projekt-weite Doku, KI-Workflow
+Cross-cutting stays centrally in `share-public`:
+- `share-public/claude_log.md` = project-wide history + phase plans
+- `share-public/AI_GUIDE.md` + `docs/` = project-wide docs, AI workflow
 
-## Phase A — Detail-Files erstellt (frühere Session)
+## Phase A — detail files created (earlier session)
 
-In jedem der 6 Modul-/Core-Repos angelegt (`mod-paragon`, `mod-paragon-itemgen`, `mod-loot-filter`, `mod-endless-storage`, `mod-auto-loot`, `azerothcore-wotlk`):
+Added in each of the 6 module/core repos (`mod-paragon`, `mod-paragon-itemgen`, `mod-loot-filter`, `mod-endless-storage`, `mod-auto-loot`, `azerothcore-wotlk`):
 
-- `log.md` mit Initial-Befüllung der letzten ~10 Commits
-- `data_structure.md` mit Folder/File-Tree
-- `functions.md` mit Mechanik-Doku
-- `mod-auto-loot` zusätzlich erstmalig `CLAUDE.md` bekommen (vorher nicht vorhanden)
+- `log.md` initially populated with the last ~10 commits
+- `data_structure.md` with the folder/file tree
+- `functions.md` with mechanics doc
+- `mod-auto-loot` additionally got its first `CLAUDE.md` (didn't exist before)
 
-## Phase A-Wrap — `todo.md` ergänzt (diese Session)
+## Phase A wrap — `todo.md` added (this session)
 
-Pro Repo neue `todo.md` mit dem aktuellen Stand offener Aufgaben (extrahiert aus den `Bekannte Einschränkungen`-Sektionen der jeweiligen `functions.md` und Reviews).
+Per-repo new `todo.md` capturing the current state of open tasks (extracted from the `Known limitations` sections of the respective `functions.md` and reviews).
 
-| Repo | Inhaltliche Schwerpunkte |
+| Repo | Content focus |
 |------|--------------------------|
-| mod-auto-loot | Mining/Herbalism/Skinning fehlt; Throttle-Cooldown |
-| mod-loot-filter | SQL-Injection-Mitigation in Lua, Bulk-Import/Export, Server-Defaults |
-| mod-endless-storage | Doku-Drift (CLAUDE.md vor März-2026-Rewrite veraltet), Bulk-Withdraw, Crafting-Fallback |
-| mod-paragon | SQL-Injection in Lua, Race-Condition C++↔Lua, Anti-Farm |
-| mod-paragon-itemgen | AH-Restriction blockiert (kein Hook), BasePoints-Off-By-One, In-Memory-Cache |
-| azerothcore-wotlk | `CanCreateAuction`-Hook ergänzen, DBC-Validierungs-CI |
+| mod-auto-loot | Mining/herbalism/skinning missing; throttle cooldown |
+| mod-loot-filter | SQL injection mitigation in Lua, bulk import/export, server defaults |
+| mod-endless-storage | Doc drift (CLAUDE.md predates the March 2026 rewrite), bulk withdraw, crafting fallback |
+| mod-paragon | SQL injection in Lua, C++↔Lua race condition, anti-farm |
+| mod-paragon-itemgen | AH restriction blocked (no hook), BasePoints off-by-one, in-memory cache |
+| azerothcore-wotlk | add `CanCreateAuction` hook, DBC validation CI |
 
-## Phase A-Wrap — `08-ai-workflow.md` erweitert
+## Phase A wrap — `08-ai-workflow.md` extended
 
-`share-public/docs/08-ai-workflow.md` um Sektion **"Per-Repo-Doku-Konvention"** ergänzt (Tabelle der 6 Files + Cross-Cutting-Verweis). Zusätzlich neue Sektion **"Plan-Dokumentation (TODOs)"** mit Trennung:
-- Modul-spezifische TODOs → `<repo>/todo.md`
-- Cross-Repo-Roadmap → `share-public/claude_log.md`
+`share-public/docs/08-ai-workflow.md` got a new **"Per-repo doc convention"** section (table of the 6 files + cross-cutting reference). Additionally a new **"Plan documentation (TODOs)"** section with the split:
+- module-specific TODOs → `<repo>/todo.md`
+- cross-repo roadmap → `share-public/claude_log.md`
 
-Workflow-Schritt 6 ergänzt um die Pflicht, bei Implementierungs-Commits auch `<repo>/log.md` und `<repo>/todo.md` zu aktualisieren.
+Workflow step 6 was extended with the duty to also update `<repo>/log.md` and `<repo>/todo.md` on implementation commits.
 
-## Phase B — Schlanke CLAUDE.md (diese Session)
+## Phase B — slim CLAUDE.md (this session)
 
-Pro Modul/Core-Repo die bestehende `CLAUDE.md` umgeschrieben:
+Per module/core repo the existing `CLAUDE.md` was rewritten:
 
-- Entfernt: Folder/File-Listen (jetzt in `data_structure.md`), Mechanik-Details (in `functions.md`), Known-Issues mit `~~strikethrough~~` (offene Punkte in `todo.md`, erledigte gestrichen).
-- Behalten: Zweck, Rolle im Gesamtprojekt, Custom-Daten-Index (IDs/Tabellen/Hooks-Namen), High-Level-Mechaniken (XP-Quellen, Skalierungs-Formel, Tooltip-System), Lizenz, Cross-Refs zu Geschwister-Files.
+- Removed: folder/file lists (now in `data_structure.md`), mechanics details (in `functions.md`), Known-Issues with `~~strikethrough~~` (open items in `todo.md`, completed ones cut).
+- Kept: purpose, role in the overall project, custom-data index (IDs/tables/hook names), high-level mechanics (XP sources, scaling formula, tooltip system), license, cross-references to sibling files.
 
-| Repo | Vorher | Nachher | Reduktion |
+| Repo | Before | After | Reduction |
 |------|-------:|--------:|----------:|
 | mod-loot-filter | 9.6 KB | ~3.6 KB | -62 % |
 | mod-endless-storage | 9.2 KB | ~3.9 KB | -58 % |
 | mod-paragon | 13 KB | ~4.6 KB | -65 % |
 | mod-paragon-itemgen | 14 KB | ~5.5 KB | -61 % |
 | azerothcore-wotlk | 16 KB | ~4.6 KB | -71 % |
-| mod-auto-loot | 4.1 KB (bereits schlank) | unverändert | – |
+| mod-auto-loot | 4.1 KB (already lean) | unchanged | – |
 
-Alle `CLAUDE.md`-Files jetzt **<6 KB** und damit safely lesbar in einem `Read`/`get_file_contents`-Call.
+All `CLAUDE.md` files are now **<6 KB** and therefore safely readable in a single `Read`/`get_file_contents` call.
 
-## Phase B — INDEX.md ergänzt (diese Session)
+## Phase B — INDEX.md added (this session)
 
-INDEX.md in den 5 Repos hinzugefügt, in denen sie noch fehlte (`mod-loot-filter`, `mod-endless-storage`, `mod-paragon`, `mod-paragon-itemgen`, `azerothcore-wotlk`). `mod-auto-loot` hatte bereits eine.
+`INDEX.md` was added to the 5 repos that were still missing one (`mod-loot-filter`, `mod-endless-storage`, `mod-paragon`, `mod-paragon-itemgen`, `azerothcore-wotlk`). `mod-auto-loot` already had one.
 
-## Lese-/Schreib-Strategien (Lessons Learned, jetzt in 08-ai-workflow.md)
+## Read/write strategies (lessons learned, now in 08-ai-workflow.md)
 
-1. **Lesen**: Files >25 K-Token (Truncation in `/tmp`) per `jq -r '.[1].text' > /tmp/file.md` extrahieren, dann `Read` mit `offset/limit` chunkweise.
-2. **Schreiben**: pro `mcp__github__create_or_update_file` immer **eine** Datei. Niemals 5+ Files parallel — Stream-Idle-Timeout droht.
-3. **Pattern-Konsistenz**: gleiche Filenamen in jedem Repo (`INDEX.md`, `CLAUDE.md`, `data_structure.md`, `functions.md`, `log.md`, `todo.md`) → blind navigierbar, keine Discovery-Suche.
+1. **Reading**: files >25 K tokens (truncation in `/tmp`) extract via `jq -r '.[1].text' > /tmp/file.md`, then `Read` with `offset/limit` chunked.
+2. **Writing**: one file per `mcp__github__create_or_update_file`. Never 5+ files in parallel — stream idle timeout looms.
+3. **Pattern consistency**: same file names in every repo (`INDEX.md`, `CLAUDE.md`, `data_structure.md`, `functions.md`, `log.md`, `todo.md`) → blindly navigable, no discovery search needed.
 
 ## Branch
 
-`claude/review-markdown-docs-bTSgu` (in jedem Repo).
+`claude/review-markdown-docs-bTSgu` (in every repo).
 
 ## Status
 
-- ✅ Phase A: Detail-Files in 6 Repos angelegt
-- ✅ todo.md in 6 Repos ergänzt
-- ✅ 08-ai-workflow.md um Per-Repo-Doku-Konvention erweitert
-- ✅ Phase B: schlanke CLAUDE.md in 5 Repos (mod-auto-loot bereits schlank)
-- ✅ INDEX.md in 5 Repos ergänzt (mod-auto-loot bereits vorhanden)
-- ✅ claude_log.md mit Wrap-Eintrag versehen (Verweis auf diese Datei)
+- ✅ Phase A: detail files added in 6 repos
+- ✅ todo.md added in 6 repos
+- ✅ 08-ai-workflow.md extended with the per-repo doc convention
+- ✅ Phase B: lean CLAUDE.md in 5 repos (mod-auto-loot already lean)
+- ✅ INDEX.md added in 5 repos (mod-auto-loot already had one)
+- ✅ claude_log.md updated with a wrap entry (link to this file)
 
-## Was nicht gemacht wurde
+## What was not done
 
-- **kein** PR auf irgendeinem Repo (User entscheidet) — Branch ist gepusht, bereit zum Review.
-- **kein** Touch an die alte 60-KB `share-public/CLAUDE.md` selbst — bleibt als Tiefenreferenz neben der neuen `docs/`-Struktur erhalten. Eine eventuelle Phase C würde sie auflösen, ist aber nicht beauftragt.
-- **kein** Build oder Test gegen den Server — reine Doku-Änderung.
+- **no** PR on any repo (the user decides) — branch is pushed, ready for review.
+- **no** touch to the legacy 60 KB `share-public/CLAUDE.md` itself — stays as a deep reference next to the new `docs/` structure. A possible phase C would dissolve it, but it isn't requested.
+- **no** build or test against the server — pure documentation change.

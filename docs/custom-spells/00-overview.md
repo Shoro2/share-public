@@ -1,20 +1,20 @@
 # Custom Spells — Overview
 
-Dokumentation für [`mod-custom-spells`](https://github.com/Shoro2/mod-custom-spells).
+Documentation for [`mod-custom-spells`](https://github.com/Shoro2/mod-custom-spells).
 
-Dieser Ordner ist die kuratierte, entdeckungsfreundliche Sicht auf das Custom-Spell-System. Single-Source-of-Truth für den vollständigen ID-Katalog bleibt [`CustomSpells.md`](https://github.com/Shoro2/mod-custom-spells/blob/master/CustomSpells.md) im Mod-Repo.
+This folder is the curated, discovery-friendly view of the custom spell system. The single source of truth for the full ID catalog remains [`CustomSpells.md`](https://github.com/Shoro2/mod-custom-spells/blob/master/CustomSpells.md) in the mod repo.
 
-## Basis-Doku
+## Base docs
 
-| Datei | Inhalt |
+| File | Contents |
 |-------|--------|
-| [01-architecture.md](./01-architecture.md) | Repo-Layout, Hooks, Loader, Build/Install |
-| [02-id-blocks.md](./02-id-blocks.md) | ID-Schema 900xxx + Allokationstabelle aller Specs |
-| [03-procs-and-flags.md](./03-procs-and-flags.md) | `spell_proc`-Setup, ProcFlags, SpellFamilyFlags-Verifikation, Off-by-One BasePoints |
-| [04-adding-a-spell.md](./04-adding-a-spell.md) | Step-by-Step Rezept für neue Custom Spells |
-| [05-complex-spells.md](./05-complex-spells.md) | Querschnitts-Themen: Rekursion, Target-Caps, ICDs, Custom-NPCs, Owner→Pet, OnRemove-Detection, Channel/Cast, Client-Patches |
+| [01-architecture.md](./01-architecture.md) | repo layout, hooks, loader, build/install |
+| [02-id-blocks.md](./02-id-blocks.md) | 900xxx ID scheme + allocation table for all specs |
+| [03-procs-and-flags.md](./03-procs-and-flags.md) | `spell_proc` setup, ProcFlags, SpellFamilyFlags verification, off-by-one BasePoints |
+| [04-adding-a-spell.md](./04-adding-a-spell.md) | step-by-step recipe for new custom spells |
+| [05-complex-spells.md](./05-complex-spells.md) | cross-cutting topics: recursion, target caps, ICDs, custom NPCs, owner→pet, OnRemove detection, channel/cast, client patches |
 
-## Spec-Kataloge
+## Spec catalogs
 
 ### Warrior (900100–900199)
 - [Arms](./specs/warrior-arms.md) · [Fury](./specs/warrior-fury.md) · [Protection](./specs/warrior-protection.md)
@@ -49,10 +49,10 @@ Dieser Ordner ist die kuratierte, entdeckungsfreundliche Sicht auf das Custom-Sp
 ### Global / Non-Class (901100–901199)
 - [global.md](./specs/global.md)
 
-## Konventionen
+## Conventions
 
-- **Ein File pro Spec.** Klassen-Files existieren bewusst nicht — Specs wachsen unabhängig.
-- **Kebab-Case Filenames**, keine Number-Prefixes in `specs/` (Reihenfolge irrelevant, Renames vermeiden).
-- **Status-Marker** pro Spell: `Live`, `WIP`, `TODO`.
-- **Implementation Notes** nur für nicht-triviale Spells (Procs, Formeln, Edge Cases). Trivials bleiben in der Tabelle.
-- **Architektonisch heikle Spells** sind in [`05-complex-spells.md`](./05-complex-spells.md) gesammelt — dort stehen die wiederkehrenden Pattern (Rekursionsschutz, Target-Caps, ICDs, Custom-NPCs etc.) zentral.
+- **One file per spec.** Class-level files do not exist by design — specs evolve independently.
+- **Kebab-case file names**, no number prefixes in `specs/` (order is irrelevant, avoid renames).
+- **Status markers** per spell: `Live`, `WIP`, `TODO`.
+- **Implementation notes** only for non-trivial spells (procs, formulas, edge cases). Trivial entries stay in the table.
+- **Architecturally tricky spells** are collected in [`05-complex-spells.md`](./05-complex-spells.md) — recurring patterns (recursion guard, target caps, ICDs, custom NPCs, etc.) live there centrally.

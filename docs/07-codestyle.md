@@ -1,61 +1,61 @@
-# 07 — Code-Style
+# 07 — Code style
 
-Konzentrierter Auszug aus `azerothcore-wotlk/CLAUDE.md` plus Projekt-Praxis. CI ist scharf — bei C++ wird mit `-Werror` gebaut, codestyle-cpp.py / codestyle-sql.py blocken PRs.
+Concentrated excerpt of `azerothcore-wotlk/CLAUDE.md` plus project practice. CI is strict — C++ is built with `-Werror`, codestyle-cpp.py / codestyle-sql.py block PRs.
 
-## C++ (AzerothCore Standard)
+## C++ (AzerothCore standard)
 
-- 4 Spaces Einrückung, **keine Tabs**
-- UTF-8, **LF**-Zeilenenden
-- max **80 Zeichen** pro Zeile
-- keine Klammern um einzeilige `if`/`else`/`for`/`while`
-- Multi-Line-Block-Klammern auf neuer Zeile (Allman-Stil), nicht trailing
-- `'f'`-Suffix für Float-Literals: `234.3456f`
-- niemals mehrere Pointer auf einer Zeile
-- Header brauchen Include-Guards (`#ifndef __NAME_H` / `#define __NAME_H`)
-- `{}` mit `fmt`-Formatierung in Logs/Output (nicht `%u`/`%s`)
-- doppelte Semikolons `;;` verboten, kein Trailing-Whitespace, keine zwei Leerzeilen hintereinander
+- 4-space indent, **no tabs**
+- UTF-8, **LF** line endings
+- max **80 characters** per line
+- no braces around single-line `if`/`else`/`for`/`while`
+- multi-line block braces on a new line (Allman style), not trailing
+- `'f'` suffix for float literals: `234.3456f`
+- never multiple pointers on one line
+- headers need include guards (`#ifndef __NAME_H` / `#define __NAME_H`)
+- `{}` with `fmt` formatting in logs/output (not `%u`/`%s`)
+- double semicolons `;;` forbidden, no trailing whitespace, no two consecutive blank lines
 
-### Type-Syntax
+### Type syntax
 
-- `Type const*` statt `const Type*` — z.B. `Player const* player`
-- `auto const&` statt `const auto&`
-- `static` vor Typ: `static uint32 someVar`
-- WoW-Types via `Define.h`: `uint8`, `uint16`, `uint32`, `int32`, … (nicht `uint32_t`)
+- `Type const*` instead of `const Type*` — e.g. `Player const* player`
+- `auto const&` instead of `const auto&`
+- `static` before the type: `static uint32 someVar`
+- WoW types via `Define.h`: `uint8`, `uint16`, `uint32`, `int32`, … (not `uint32_t`)
 
-### Naming-Konventionen
+### Naming conventions
 
-| Element | Konvention | Beispiel |
+| Element | Convention | Example |
 |---------|------------|----------|
-| Public/Protected Member | `UpperCamelCase` | `SomeGuid`, `ShadowBoltTimer` |
-| Private Member | `_lowerCamelCase` | `_someGuid`, `_count` |
-| Methoden | `UpperCamelCase` | `DoSomething(uint32 someNumber)` |
-| Parameter | `lowerCamelCase` | `someNumber`, `targetPlayer` |
-| Konstanten/Enums | `UPPER_SNAKE_CASE` mit Prefix | siehe unten |
+| Public/protected member | `UpperCamelCase` | `SomeGuid`, `ShadowBoltTimer` |
+| Private member | `_lowerCamelCase` | `_someGuid`, `_count` |
+| Methods | `UpperCamelCase` | `DoSomething(uint32 someNumber)` |
+| Parameters | `lowerCamelCase` | `someNumber`, `targetPlayer` |
+| Constants/enums | `UPPER_SNAKE_CASE` with prefix | see below |
 | WorldObjects | `Type* var;` | `Player* player;`, `Creature* creature;` |
 
-Standard-Prefixe für Konstanten:
+Standard prefixes for constants:
 - Spells: `SPELL_MAGE_FIREBALL`, `SPELL_GENERIC_BERSERK`, `SPELL_CUSTOM_*`
-- NPCs: `NPC_IRON_CONSTRUCT`, Items: `ITEM_*`, GameObjects: `GO_*`, Quests: `QUEST_*`
-- Texte: `SAY_AGGRO`, `EMOTE_JETS`
+- NPCs: `NPC_IRON_CONSTRUCT`, items: `ITEM_*`, GameObjects: `GO_*`, quests: `QUEST_*`
+- Texts: `SAY_AGGRO`, `EMOTE_JETS`
 - Events: `EVENT_SPELL_SCORCH`
-- Daten: `DATA_BOSS_ID`, Achievements: `ACHIEV_*`, Models: `MODEL_*`
+- Data: `DATA_BOSS_ID`, achievements: `ACHIEV_*`, models: `MODEL_*`
 
-### CI-enforced Verbote (codestyle-cpp.py)
+### CI-enforced bans (codestyle-cpp.py)
 
-| Verboten | Stattdessen |
+| Forbidden | Use instead |
 |----------|-------------|
 | `GetTypeId() == TYPEID_PLAYER` | `IsPlayer()`, `IsCreature()`, `IsItem()`, `IsGameObject()`, `IsDynamicObject()` |
 | `Flags & ITEM_FLAG_*` | `HasFlag(ItemFlag)`, `HasFlag2(ItemFlag2)`, `HasFlagCu(ItemFlagsCustom)` |
-| direkter `UNIT_NPC_FLAGS` | `GetNpcFlags()`, `HasNpcFlag()`, `SetNpcFlag()`, `RemoveNpcFlag()` |
-| direkter `ITEM_FIELD_FLAGS` | `IsRefundable()`, `IsBOPTradable()`, `IsWrapped()` |
-| `ObjectGuid::GetCounter()` direkt | `ObjectGuid::ToString().c_str()` |
+| direct `UNIT_NPC_FLAGS` | `GetNpcFlags()`, `HasNpcFlag()`, `SetNpcFlag()`, `RemoveNpcFlag()` |
+| direct `ITEM_FIELD_FLAGS` | `IsRefundable()`, `IsBOPTradable()`, `IsWrapped()` |
+| `ObjectGuid::GetCounter()` directly | `ObjectGuid::ToString().c_str()` |
 | `const Type*`, `const auto&` | `Type const*`, `auto const&` |
-| Tabs, mehrfach-Leerzeilen, Trailing-Whitespace | siehe oben |
-| Opening-Brace auf gleicher Zeile wie `if`/`else` | neue Zeile |
+| Tabs, multiple blank lines, trailing whitespace | see above |
+| Opening brace on the same line as `if`/`else` | new line |
 
-### File-Header
+### File header
 
-Jede C++-Quelldatei beginnt mit dem GPL-v2-Header:
+Every C++ source file starts with the GPL v2 header:
 
 ```cpp
 /*
@@ -66,38 +66,38 @@ Jede C++-Quelldatei beginnt mit dem GPL-v2-Header:
  */
 ```
 
-## SQL-Style
+## SQL style
 
-- Backticks um Tabellen- und Spaltennamen: `` `creature_template` ``
-- Single-Quotes für Strings, keine Quotes für numerische Werte
-- **DELETE vor INSERT** (kein `REPLACE`)
-- DELETE/UPDATE muss mindestens den Primary Key in `WHERE` haben
-- `IN (1, 2, 3)` für Mehrfachwerte bevorzugen
-- Variablen für wiederholte Werte: `SET @ENTRY := 7727;`
-- Mehrere Rows in einem `INSERT` zusammenfassen
-- **Flag-Updates**: bitweise (`flags | 0x4`, `flags & ~0x8`) — nie das ganze Feld überschreiben
-- Tabellen-Naming: `snake_case`, Spalten: `UpperCamelCase` (Akronyme groß: `PositionX`, `DisplayID`, `ItemGUID`)
-- `INT` statt `INT(11)`, niemals `MEDIUMINT`
-- Engine: **InnoDB only** (CI), Charset `utf8mb4`, Collation `utf8mb4_unicode_ci` (`utf8mb4_bin` für Name-Spalten)
-- jedes Statement endet mit Semikolon
-- 4 Spaces, keine Tabs, kein Trailing-Whitespace, keine doppelten Leerzeilen
-- **`entryorguid` lowercase** (nicht `EntryOrGuid`)
-- `broadcast_text`-Edits nur mit Sniff-Daten und Maintainer-Approval
-- nie aus `creature_template`/`gameobject_template`/`item_template`/`quest_template` `DELETE`n
-- SQL-Files mit Random-Filename in `data/sql/updates/pending_db_*/` ablegen, **nicht** in `base/` oder `archive/`
+- Backticks around table and column names: `` `creature_template` ``
+- Single quotes for strings, no quotes for numeric values
+- **DELETE before INSERT** (no `REPLACE`)
+- DELETE/UPDATE must include at least the primary key in `WHERE`
+- prefer `IN (1, 2, 3)` for multiple values
+- variables for repeated values: `SET @ENTRY := 7727;`
+- combine multiple rows in one `INSERT`
+- **flag updates**: bitwise (`flags | 0x4`, `flags & ~0x8`) — never overwrite the entire field
+- table naming: `snake_case`, columns: `UpperCamelCase` (acronyms uppercase: `PositionX`, `DisplayID`, `ItemGUID`)
+- `INT` instead of `INT(11)`, never `MEDIUMINT`
+- engine: **InnoDB only** (CI), charset `utf8mb4`, collation `utf8mb4_unicode_ci` (`utf8mb4_bin` for name columns)
+- every statement ends with a semicolon
+- 4 spaces, no tabs, no trailing whitespace, no double blank lines
+- **`entryorguid` lowercase** (not `EntryOrGuid`)
+- `broadcast_text` edits only with sniff data and maintainer approval
+- never `DELETE` from `creature_template`/`gameobject_template`/`item_template`/`quest_template`
+- place SQL files with a random filename in `data/sql/updates/pending_db_*/`, **not** in `base/` or `archive/`
 
 ## Lua / Eluna / AIO
 
-- **Tab-Einrückung** (Eluna/AIO Konvention)
-- AIO-Handler-Pattern: `AIO.AddHandlers("NAME", handlers)` — Tabelle nach Registrierung in-place ergänzen
-- AIO-Msg-Pattern: `AIO.Msg():Add("Name", "Handler", ...):Send(player)` (Server) bzw. `:Send()` (Client)
-- `player` ist **immer** erstes Argument in JEDEM Handler — auch auf Client (dort: String mit Spielername)
-- `AIO.AddAddon()` am Anfang von Client-Files: `if AIO.AddAddon() then return end`
-- `AIO.AddOnInit(function(msg, player) … return msg end)` für Login-Daten
-- Globale Handler-Tabelle bei Hot-Reload-Risiko (siehe [04-aio-framework.md](./04-aio-framework.md#re-registrierungs-falle))
-- max 15 Argumente pro `msg:Add()` Block
+- **Tab indentation** (Eluna/AIO convention)
+- AIO handler pattern: `AIO.AddHandlers("NAME", handlers)` — extend the table in place after registration
+- AIO Msg pattern: `AIO.Msg():Add("Name", "Handler", ...):Send(player)` (server) or `:Send()` (client)
+- `player` is **always** the first argument in EVERY handler — also on the client (there: a string with the player's name)
+- `AIO.AddAddon()` at the top of client files: `if AIO.AddAddon() then return end`
+- `AIO.AddOnInit(function(msg, player) … return msg end)` for login data
+- global handler table for hot-reload risk (see [04-aio-framework.md](./04-aio-framework.md#re-registration-trap))
+- max 15 arguments per `msg:Add()` block
 
-## Commit Message Format
+## Commit message format
 
 Conventional Commits:
 
@@ -105,46 +105,46 @@ Conventional Commits:
 Type(Scope/Subscope): Short description (max 50 chars)
 ```
 
-| Type | Wofür |
+| Type | For what |
 |------|-------|
-| `feat` | neues Feature |
-| `fix` | Bugfix |
-| `refactor` | Restrukturierung ohne Verhaltensänderung |
-| `style` | rein kosmetisch (Whitespace, etc.) |
-| `docs` | Dokumentation |
-| `test` | Tests |
-| `chore` | Maintenance (Imports, Tooling) |
+| `feat` | new feature |
+| `fix` | bugfix |
+| `refactor` | restructure without behavior change |
+| `style` | purely cosmetic (whitespace, etc.) |
+| `docs` | documentation |
+| `test` | tests |
+| `chore` | maintenance (imports, tooling) |
 
 Scopes: `Core` (C++), `DB` (SQL).
 Subscopes: `Spells`, `Scripts`, `Server`, `SAI`, `Ulduar`, `ICC`, ...
 
-Beispiele:
+Examples:
 - `fix(Core/Spells): Fix damage calculation for Fireball`
 - `fix(DB/SAI): Missing spell to NPC Hogger`
 - `feat(Core/Commands): New GM command to do something`
 - `chore(DB): import pending files`
 
-**Regeln**: Subject capitalized, imperative mood, kein Punkt am Ende, max 50 Zeichen Title, max 72 Zeichen pro Body-Zeile.
+**Rules**: subject capitalized, imperative mood, no period at the end, max 50 chars title, max 72 chars per body line.
 
-## Branch-Naming
+## Branch naming
 
-Für KI-Sessions:
+For AI sessions:
 ```
-claude/<beschreibung-mit-bindestrichen>-<sessionId>
+claude/<description-with-hyphens>-<sessionId>
 ```
-Beispiele: `claude/fix-lifeleech-caster-0yYoZ`, `claude/review-markdown-docs-bTSgu`.
+Examples: `claude/fix-lifeleech-caster-0yYoZ`, `claude/review-markdown-docs-bTSgu`.
 
-**Wichtig**: pro Repo ein eigener Branch — derselbe Branch-Name kann (und sollte) in mehreren Repos parallel existieren, wenn Cross-Repo-Arbeit nötig ist.
+**Important**: one branch per repo — the same branch name can (and should) exist in parallel across multiple repos when cross-repo work is needed.
 
-## CI-Pipelines (azerothcore-wotlk)
+## CI pipelines (azerothcore-wotlk)
 
-| Workflow | Trigger | Was |
+| Workflow | Trigger | What |
 |----------|---------|-----|
-| `codestyle.yml` | `src/`-Änderungen | C++ codestyle + cppcheck |
-| `sql-codestyle.yml` | `data/`-Änderungen | SQL codestyle |
-| `core-build-pch.yml` | alle | clang-15+18 Linux mit PCH |
-| `core-build-nopch.yml` | alle | clang-15+18, gcc-14 ohne PCH |
-| `macos_build.yml`, `windows_build.yml` | alle | OS-Kompatibilität |
-| `core_modules_build.yml` | alle | Modul-Compile-Check |
+| `codestyle.yml` | `src/` changes | C++ codestyle + cppcheck |
+| `sql-codestyle.yml` | `data/` changes | SQL codestyle |
+| `core-build-pch.yml` | all | clang-15+18 Linux with PCH |
+| `core-build-nopch.yml` | all | clang-15+18, gcc-14 without PCH |
+| `macos_build.yml`, `windows_build.yml` | all | OS compatibility |
+| `core_modules_build.yml` | all | module compile check |
 
-Kompiliert mit `-Werror`: jede Warnung lässt den Build fehlschlagen.
+Compiled with `-Werror`: any warning fails the build.

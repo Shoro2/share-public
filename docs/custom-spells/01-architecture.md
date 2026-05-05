@@ -1,14 +1,14 @@
 # Custom Spells — Architecture
 
-## Repo-Layout (`mod-custom-spells/`)
+## Repo layout (`mod-custom-spells/`)
 
 ```
 src/
-  mod_custom_spells_loader.cpp   — Module-Entry, Addmod_custom_spellsScripts()
-  custom_spells.cpp              — Master-Switch (PlayerScript OnPlayerSpellCast)
-  custom_spells_common.h         — geteilte Includes/Konstanten/Enums
-  custom_spells_global.cpp       — Non-Class Spells (901100–901199)
-  custom_spells_<class>.cpp      — pro Klasse: warrior, paladin, dk, shaman,
+  mod_custom_spells_loader.cpp   — Module entry, Addmod_custom_spellsScripts()
+  custom_spells.cpp              — Master switch (PlayerScript OnPlayerSpellCast)
+  custom_spells_common.h         — Shared includes/constants/enums
+  custom_spells_global.cpp       — Non-class spells (901100–901199)
+  custom_spells_<class>.cpp      — One per class: warrior, paladin, dk, shaman,
                                    hunter, rogue, druid, mage, warlock, priest
 conf/
   mod_custom_spells.conf.dist    — CustomSpells.Enable
@@ -16,21 +16,21 @@ data/sql/db-world/
   mod_custom_spells.sql          — spell_dbc, spell_script_names, spell_proc
 ```
 
-Der Loader-Funktionsname folgt der AzerothCore-Konvention: Modul-Ordnername mit `-` ersetzt durch `_`, also `Addmod_custom_spellsScripts()`. Der Core findet ihn beim Static-Linking automatisch.
+The loader function name follows the AzerothCore convention: module folder name with `-` replaced by `_`, i.e. `Addmod_custom_spellsScripts()`. The core finds it automatically during static linking.
 
-## Drei Hook-Strategien
+## Three hook strategies
 
-Für jeden neuen Spell gibt es drei Wege, das gewünschte Verhalten anzubinden. Welcher Weg passt, hängt davon ab, ob der Effekt einen eigenen Spell-Cast braucht oder sich an einen Blizzard-Spell hängt.
+For every new spell there are three ways to wire up the desired behavior. Which one fits depends on whether the effect needs its own spell cast or hooks into a Blizzard spell.
 
-### Strategie 1 — Eigene Custom-Spells (eigene ID + SpellScript)
+### Strategy 1 — Custom spells (own ID + SpellScript)
 
-Eigene 900xxx-ID, DBC-Eintrag in `spell_dbc`, C++-Klasse erbt von `SpellScript`. Verknüpfung über `spell_script_names`. Der Spell wird vom Spieler explizit gecastet (oder per `CastSpell` ausgelöst).
+Custom 900xxx ID, DBC entry in `spell_dbc`, C++ class inheriting from `SpellScript`. Linked via `spell_script_names`. The spell is cast explicitly by the player (or triggered via `CastSpell`).
 
-Beispiele: Paragon Strike (900106), Bloody Whirlwind Buff (900115).
+Examples: Paragon Strike (900106), Bloody Whirlwind buff (900115).
 
-### Strategie 2 — Hook auf Blizzard-Spells
+### Strategy 2 — Hook on Blizzard spells
 
-Die C++-Klasse hängt sich über `spell_script_names` an eine bereits existierende ID (z. B. 1680 Whirlwind, 23881 Bloodthirst, 57823 Revenge, 47502 Thunderclap). Sie wird bei **jedem** Cast dieses Spells ausgeführt — daher Pflicht: `HasAura()`-Check auf einen Marker-Spell, der nur bei Spielern mit der gewünschten Mechanik aktiv ist.
+The C++ class hooks via `spell_script_names` onto an existing ID (e.g. 1680 Whirlwind, 23881 Bloodthirst, 57823 Revenge, 47502 Thunderclap). It runs on **every** cast of that spell — therefore required: a `HasAura()` check on a marker spell that is only active for players with the desired mechanic.
 
 ```cpp
 void HandleAfterHit()
@@ -38,33 +38,33 @@ void HandleAfterHit()
     Player* player = GetCaster()->ToPlayer();
     if (!player || !player->HasAura(SPELL_PROT_REVENGE_AOE_PASSIVE))
         return;
-    // Custom-Logik nur für Spieler mit Marker-Aura
+    // Custom logic only for players with the marker aura
 }
 ```
 
-Beispiele: `spell_custom_prot_revenge_aoe` hängt an Revenge, prüft Marker 900169.
+Examples: `spell_custom_prot_revenge_aoe` hooks on Revenge, checks the marker 900169.
 
-### Strategie 3 — AuraScript mit Proc
+### Strategy 3 — AuraScript with proc
 
-Passive Aura (DBC-Effekt `SPELL_AURA_PROC_TRIGGER_SPELL` oder `SPELL_AURA_DUMMY`) wird über `spell_proc` scharfgemacht. Bei Trigger-Event ruft die Engine zuerst `CheckProc()` (filtern), dann `HandleProc()` mit `PreventDefaultAction()` und Custom-Cast.
+Passive aura (DBC effect `SPELL_AURA_PROC_TRIGGER_SPELL` or `SPELL_AURA_DUMMY`) is armed via `spell_proc`. On the trigger event the engine first calls `CheckProc()` (filter), then `HandleProc()` with `PreventDefaultAction()` and a custom cast.
 
-Wichtig: **DBC `EffectSpellClassMask` wird ignoriert** — die Filterung läuft ausschließlich über `spell_proc` + C++-`CheckProc`. Detail siehe [`03-procs-and-flags.md`](./03-procs-and-flags.md).
+Important: **DBC `EffectSpellClassMask` is ignored** — filtering runs exclusively through `spell_proc` + a C++ `CheckProc`. Detail in [`03-procs-and-flags.md`](./03-procs-and-flags.md).
 
-## OnPlayerSpellCast Master-Switch
+## OnPlayerSpellCast master switch
 
-`custom_spells.cpp` enthält einen PlayerScript-Hook auf `OnPlayerSpellCast`, der über ein `switch` auf bestimmte Custom-Spell-IDs reagiert (z. B. für Spells, die nur einen einfachen Side-Effect auslösen sollen, ohne dass ein eigenes SpellScript benötigt wird). Für komplexere Fälle ist Strategie 1–3 vorzuziehen.
+`custom_spells.cpp` contains a PlayerScript hook on `OnPlayerSpellCast` that reacts via a `switch` to specific custom spell IDs (e.g. for spells that should only trigger a simple side effect without needing an own SpellScript). For more complex cases prefer strategies 1–3.
 
-## Loader-Reihenfolge
+## Loader order
 
-`Addmod_custom_spellsScripts()` ruft alle `AddCustomSpells<Class>Scripts()`-Funktionen auf (eine pro Class-File) sowie `AddCustomSpellsGlobalScripts()`. Reihenfolge ist nicht kritisch — alle Registrierungen landen in den Manager-Maps von `SpellMgr` / `ScriptMgr`.
+`Addmod_custom_spellsScripts()` calls all `AddCustomSpells<Class>Scripts()` functions (one per class file) plus `AddCustomSpellsGlobalScripts()`. Order is not critical — all registrations end up in the manager maps of `SpellMgr` / `ScriptMgr`.
 
-## DBC-Pflege
+## DBC maintenance
 
-Jeder Custom-Spell benötigt einen Eintrag in `spell_dbc` (DB-Override für `Spell.dbc`). Der Server lädt beim Start zuerst `Spell.dbc`, dann die `spell_dbc`-Tabelle drüber. Tooltips im Client greifen aber direkt auf die Client-`Spell.dbc` zu — daher müssen sichtbare Spells zusätzlich in der Client-DBC patched werden (`python_scripts/patch_dbc.py` in `share-public`).
+Every custom spell needs an entry in `spell_dbc` (DB override for `Spell.dbc`). The server loads `Spell.dbc` first at start, then layers the `spell_dbc` table over it. Tooltips in the client however access the client `Spell.dbc` directly — therefore visible spells must additionally be patched into the client DBC (`python_scripts/patch_dbc.py` in `share-public`).
 
-Off-by-One BasePoints beachten: `Spell.dbc` speichert `EffectBasePoints = real_value - 1`. Detail siehe [`docs/03-spell-system.md`](../03-spell-system.md#off-by-one-basepoints).
+Mind the off-by-one BasePoints: `Spell.dbc` stores `EffectBasePoints = real_value - 1`. Detail in [`docs/03-spell-system.md`](../03-spell-system.md#off-by-one-basepoints).
 
-## Build / Install
+## Build / install
 
 ```bash
 cd azerothcore-wotlk/modules
@@ -72,23 +72,23 @@ git clone <repo-url> mod-custom-spells
 cd ../build && cmake .. -DSCRIPTS=static -DMODULES=static && make -j$(nproc) && make install
 ```
 
-SQL aus `data/sql/db-world/` in `acore_world` einspielen. Config:
+Apply SQL from `data/sql/db-world/` to `acore_world`. Config:
 
 ```bash
 cp etc/mod_custom_spells.conf.dist etc/mod_custom_spells.conf
 ```
 
-## Konfiguration
+## Configuration
 
-| Option | Default | Zweck |
+| Option | Default | Purpose |
 |--------|---------|-------|
-| `CustomSpells.Enable` | `1` | Modul aktiv (1) / aus (0) |
+| `CustomSpells.Enable` | `1` | module enabled (1) / disabled (0) |
 
-Alle SpellScripts prüfen `sConfigMgr->GetOption<bool>("CustomSpells.Enable", true)` als ersten Schritt, damit das Modul zur Laufzeit hart ausschaltbar ist.
+All SpellScripts check `sConfigMgr->GetOption<bool>("CustomSpells.Enable", true)` as the first step so the module can be hard-disabled at runtime.
 
-## Querverweise
+## Cross references
 
-- [`02-id-blocks.md`](./02-id-blocks.md) — ID-Schema und Allokation pro Spec
+- [`02-id-blocks.md`](./02-id-blocks.md) — ID scheme and allocation per spec
 - [`03-procs-and-flags.md`](./03-procs-and-flags.md) — spell_proc, ProcFlags, SpellFamilyFlags
-- [`04-adding-a-spell.md`](./04-adding-a-spell.md) — Step-by-Step für neue Spells
-- [`docs/03-spell-system.md`](../03-spell-system.md) — SpellScript-/AuraScript-Klassen-Hierarchie + Proc-Pipeline
+- [`04-adding-a-spell.md`](./04-adding-a-spell.md) — step-by-step for new spells
+- [`docs/03-spell-system.md`](../03-spell-system.md) — SpellScript/AuraScript class hierarchy + proc pipeline

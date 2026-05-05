@@ -1,19 +1,19 @@
-# Custom Spells — ID-Block-Schema
+# Custom Spells — ID block scheme
 
-## Schema
+## Scheme
 
-- **Range**: 900xxx für Custom Spells. Wird durchgängig für SpellScripts, AuraScripts, Marker-Auras und Helper-Spells genutzt.
-- **Block-Größe**: 33 IDs pro Spec (33 × 3 Specs = 99 IDs/Klasse, plus 1 Slot Reserve am Ende).
-- **Sub-Allokation pro Spec**: typischerweise die ersten 5–10 IDs für sichtbare Player-Spells, danach Helper, Marker und Proc-Auras in derselben Range.
-- **Hunter / Mage Shared-Range**: erste 2 IDs (Hunter 900500–900501) bzw. eine ID (Mage 900700) für klassenweite Spells, die nicht spec-spezifisch sind.
-- **Druid bekommt 100er-Block** (901000–901099), weil 4 Specs (Balance, Feral Tank, Feral DPS, Resto). Feral wird absichtlich in Tank vs. DPS getrennt, weil die Mechaniken zu unterschiedlich sind.
-- **901100–901199**: Non-Class Global Spells (Cast-While-Moving, Extra Attack, AoE Proc, etc.).
+- **Range**: 900xxx for custom spells. Used uniformly for SpellScripts, AuraScripts, marker auras, and helper spells.
+- **Block size**: 33 IDs per spec (33 × 3 specs = 99 IDs/class, plus 1 reserve slot at the end).
+- **Sub-allocation per spec**: typically the first 5–10 IDs are visible player spells, then helper, marker and proc auras within the same range.
+- **Hunter / Mage shared range**: first 2 IDs (Hunter 900500–900501) or one ID (Mage 900700) for class-wide spells that are not spec-specific.
+- **Druid gets a 100-ID block** (901000–901099) because of 4 specs (Balance, Feral Tank, Feral DPS, Resto). Feral is intentionally split into Tank vs. DPS because the mechanics differ too much.
+- **901100–901199**: non-class global spells (Cast-While-Moving, extra attack, AoE proc, etc.).
 
-Querverweis: [`docs/06-custom-ids.md`](../06-custom-ids.md) für globale ID-Räume aller Mods (100xxx Paragon, 920xxx Cursed-Marker, 950xxx Passive-Enchants, etc.).
+Cross reference: [`docs/06-custom-ids.md`](../06-custom-ids.md) for the global ID spaces of all mods (100xxx Paragon, 920xxx cursed marker, 950xxx passive enchants, etc.).
 
-## Allokation
+## Allocation
 
-| Klasse | Spec | Range | Detail-Doku |
+| Class | Spec | Range | Detail doc |
 |--------|------|-------|-------------|
 | Warrior | Arms | 900100–900107 | [warrior-arms](./specs/warrior-arms.md) |
 | Warrior | Fury | 900108–900121 | [warrior-fury](./specs/warrior-fury.md) |
@@ -36,11 +36,11 @@ Querverweis: [`docs/06-custom-ids.md`](../06-custom-ids.md) für globale ID-Räu
 | Rogue | Subtlety | 900666–900699 | [rogue-subtlety](./specs/rogue-subtlety.md) |
 | Mage | Shared | 900700 | [mage-shared](./specs/mage-shared.md) |
 | Mage | Arcane | 900700–900713 | [mage-arcane](./specs/mage-arcane.md) |
-| Mage | _frei_ | 900714–900732 | (reserviert) |
+| Mage | _free_ | 900714–900732 | (reserved) |
 | Mage | Fire | 900733–900740 | [mage-fire](./specs/mage-fire.md) |
-| Mage | _frei_ | 900741–900765 | (reserviert) |
+| Mage | _free_ | 900741–900765 | (reserved) |
 | Mage | Frost | 900766–900774 | [mage-frost](./specs/mage-frost.md) |
-| Mage | _frei_ | 900775–900799 | (reserviert) |
+| Mage | _free_ | 900775–900799 | (reserved) |
 | Warlock | Affliction | 900800–900832 | [warlock-affliction](./specs/warlock-affliction.md) |
 | Warlock | Demonology | 900833–900865 | [warlock-demonology](./specs/warlock-demonology.md) |
 | Warlock | Destruction | 900866–900899 | [warlock-destruction](./specs/warlock-destruction.md) |
@@ -53,21 +53,21 @@ Querverweis: [`docs/06-custom-ids.md`](../06-custom-ids.md) für globale ID-Räu
 | Druid | Restoration | 901066–901099 | [druid-restoration](./specs/druid-restoration.md) |
 | — | Global / Non-Class | 901100–901199 | [global](./specs/global.md) |
 
-> **Mage-Layout**: Range-Konflikt zwischen Shared und Arcane aufgelöst: 900700 ist der einzelne Shared-Spell (Channeling Evocation, alle 3 Specs), 900700–900713 ist der Arcane-Block insgesamt (also Shared-ID 900700 plus 13 Arcane-Spells 900701–900713). Fire 900733–900740, Frost 900766–900774 — die Lücken dazwischen sind reserviert für spätere Erweiterungen.
+> **Mage layout**: range conflict between Shared and Arcane resolved: 900700 is the single shared spell (Channeling Evocation, all 3 specs), 900700–900713 is the overall Arcane block (i.e. shared ID 900700 plus 13 Arcane spells 900701–900713). Fire 900733–900740, Frost 900766–900774 — the gaps between are reserved for later additions.
 
-## Reservierte Marker / Helper innerhalb der Blöcke
+## Reserved markers / helpers within blocks
 
-Innerhalb jedes Spec-Blocks tauchen drei Sorten von IDs auf:
+Inside each spec block three kinds of IDs appear:
 
-| Typ | Beispiel | Zweck |
+| Type | Example | Purpose |
 |-----|----------|-------|
-| Player-Spell | 900106 Paragon Strike | sichtbar in Spellbook |
-| Marker-Aura | 900168 Prot: Revenge Damage | passive Trigger-Tag, `HasAura()`-Check |
-| Helper-Spell | 900174 Block Shield Burst | wird per `CastSpell(target, ID, true)` aus C++ getriggert |
+| Player spell | 900106 Paragon Strike | visible in the spellbook |
+| Marker aura | 900168 Prot: Revenge Damage | passive trigger tag, `HasAura()` check |
+| Helper spell | 900174 Block Shield Burst | triggered via `CastSpell(target, ID, true)` from C++ |
 
-Marker und Helper sind nicht direkt cast-bar — sie tragen `SPELL_ATTR0_PASSIVE` (`0x40`) bzw. werden nur intern gerufen.
+Markers and helpers are not directly castable — they carry `SPELL_ATTR0_PASSIVE` (`0x40`) or are only invoked internally.
 
-## Externe Referenzen
+## External references
 
-- Master-Source: [`mod-custom-spells/CustomSpells.md`](https://github.com/Shoro2/mod-custom-spells/blob/master/CustomSpells.md) Sektion "ID-Block-Schema" und "Aktuelle Belegung"
-- DBC-Status pro Klasse: `mod-custom-spells/CLAUDE.md` Sektion "DBC Status"
+- master source: [`mod-custom-spells/CustomSpells.md`](https://github.com/Shoro2/mod-custom-spells/blob/master/CustomSpells.md) sections "ID block scheme" and "Current allocation"
+- DBC status per class: `mod-custom-spells/CLAUDE.md` section "DBC Status"

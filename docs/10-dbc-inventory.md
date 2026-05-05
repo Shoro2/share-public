@@ -1,159 +1,159 @@
-# 10 — DBC-Datei-Inventar
+# 10 — DBC file inventory
 
-Der Ordner `dbc/` enthält alle 246 DBC-Dateien des WoW 3.3.5a Clients im WDBC-Binärformat. Diese definieren die clientseitige Spielmechanik und werden vom Server beim Start in entsprechende Stores (`sSpellStore` etc.) geladen.
+The `dbc/` folder contains all 246 DBC files of the WoW 3.3.5a client in WDBC binary format. They define the client-side game mechanics and are loaded into matching stores (`sSpellStore` etc.) by the server at start.
 
-> Für DBC-Lade-Mechanik, Override-Pfade über DB-Tabellen (`*_dbc`) und Patching siehe [03-spell-system.md](./03-spell-system.md).
+> For DBC loading mechanics, override paths through DB tables (`*_dbc`) and patching, see [03-spell-system.md](./03-spell-system.md).
 
 ---
 
-## Spell-bezogen (22 Dateien)
+## Spell-related (22 files)
 
-| Datei | Server-Store | Inhalt |
+| File | Server store | Contents |
 |-------|-------------|--------|
-| `Spell.dbc` | `sSpellStore` | Alle Spell-Definitionen (234 Felder, 936 Bytes/Record) |
-| `SpellCastTimes.dbc` | `sSpellCastTimesStore` | Cast-Zeiten (Base, PerLevel, Minimum) |
-| `SpellCategory.dbc` | `sSpellCategoryStore` | Spell-Kategorien (Cooldown-Gruppen) |
-| `SpellChainEffects.dbc` | — | Visuelle Ketten-Effekte |
-| `SpellDescriptionVariables.dbc` | — | Tooltip-Variablen |
-| `SpellDifficulty.dbc` | `sSpellDifficultyStore` | Spell-Varianten nach Dungeon-Schwierigkeit |
-| `SpellDispelType.dbc` | — | Dispel-Typen (Magic, Curse, Disease, Poison) |
-| `SpellDuration.dbc` | `sSpellDurationStore` | Spell-Dauer (Duration, PerLevel, Max) |
-| `SpellEffectCameraShakes.dbc` | — | Kamera-Shake bei Spell-Effekten |
-| `SpellFocusObject.dbc` | `sSpellFocusObjectStore` | Benötigte Objekte zum Casten |
-| `SpellIcon.dbc` | `sSpellIconStore` | Spell-Icon-Pfade |
-| `SpellItemEnchantment.dbc` | `sSpellItemEnchantmentStore` | **Item-Enchantment-Definitionen** (38 Felder, Custom-Patching via `patch_dbc.py`) |
-| `SpellItemEnchantmentCondition.dbc` | `sSpellItemEnchantmentConditionStore` | Enchantment-Bedingungen |
-| `SpellMechanic.dbc` | — | Spell-Mechaniken (Stun, Root, Silence, etc.) |
-| `SpellMissile.dbc` | — | Geschoss-Parameter |
-| `SpellMissileMotion.dbc` | — | Geschoss-Bewegungsmuster |
-| `SpellRadius.dbc` | `sSpellRadiusStore` | AoE-Radien (Radius, PerLevel, Max) |
-| `SpellRange.dbc` | `sSpellRangeStore` | Spell-Reichweiten (Min, Max, Display) |
-| `SpellRuneCost.dbc` | `sSpellRuneCostStore` | DK-Runenkosten (Blood, Frost, Unholy, RunicPower) |
-| `SpellShapeshiftForm.dbc` | `sSpellShapeshiftFormStore` | Shapeshift-Formen (Druid, etc.) |
-| `SpellVisual.dbc` | — | Visuelle Spell-Darstellung |
-| `SpellVisualEffectName.dbc` | — | Effekt-Namen |
-| `SpellVisualKit.dbc` | — | Visuelle Kit-Zusammenstellungen |
-| `SpellVisualKitAreaModel.dbc` | — | Area-basierte visuelle Modelle |
-| `SpellVisualKitModelAttach.dbc` | — | Modell-Attachment-Punkte |
-| `SpellVisualPrecastTransitions.dbc` | — | Precast-Übergangseffekte |
+| `Spell.dbc` | `sSpellStore` | all spell definitions (234 fields, 936 bytes/record) |
+| `SpellCastTimes.dbc` | `sSpellCastTimesStore` | cast times (base, per level, minimum) |
+| `SpellCategory.dbc` | `sSpellCategoryStore` | spell categories (cooldown groups) |
+| `SpellChainEffects.dbc` | — | visual chain effects |
+| `SpellDescriptionVariables.dbc` | — | tooltip variables |
+| `SpellDifficulty.dbc` | `sSpellDifficultyStore` | spell variants by dungeon difficulty |
+| `SpellDispelType.dbc` | — | dispel types (Magic, Curse, Disease, Poison) |
+| `SpellDuration.dbc` | `sSpellDurationStore` | spell duration (Duration, PerLevel, Max) |
+| `SpellEffectCameraShakes.dbc` | — | camera shake on spell effects |
+| `SpellFocusObject.dbc` | `sSpellFocusObjectStore` | required objects to cast |
+| `SpellIcon.dbc` | `sSpellIconStore` | spell icon paths |
+| `SpellItemEnchantment.dbc` | `sSpellItemEnchantmentStore` | **item enchantment definitions** (38 fields, custom patching via `patch_dbc.py`) |
+| `SpellItemEnchantmentCondition.dbc` | `sSpellItemEnchantmentConditionStore` | enchantment conditions |
+| `SpellMechanic.dbc` | — | spell mechanics (stun, root, silence, etc.) |
+| `SpellMissile.dbc` | — | projectile parameters |
+| `SpellMissileMotion.dbc` | — | projectile motion patterns |
+| `SpellRadius.dbc` | `sSpellRadiusStore` | AoE radii (Radius, PerLevel, Max) |
+| `SpellRange.dbc` | `sSpellRangeStore` | spell ranges (Min, Max, Display) |
+| `SpellRuneCost.dbc` | `sSpellRuneCostStore` | DK rune costs (Blood, Frost, Unholy, RunicPower) |
+| `SpellShapeshiftForm.dbc` | `sSpellShapeshiftFormStore` | shapeshift forms (Druid, etc.) |
+| `SpellVisual.dbc` | — | visual spell representation |
+| `SpellVisualEffectName.dbc` | — | effect names |
+| `SpellVisualKit.dbc` | — | visual kit assemblies |
+| `SpellVisualKitAreaModel.dbc` | — | area-based visual models |
+| `SpellVisualKitModelAttach.dbc` | — | model attachment points |
+| `SpellVisualPrecastTransitions.dbc` | — | precast transition effects |
 
-## Charakter/Spieler (10 Dateien)
+## Character/player (10 files)
 
-| Datei | Inhalt |
+| File | Contents |
 |-------|--------|
-| `ChrClasses.dbc` | Klassen-Definitionen (Name, DisplayPower, Flags) |
-| `ChrRaces.dbc` | Rassen-Definitionen (Name, Faction, Models) |
-| `CharBaseInfo.dbc` | Basis-Charakter-Info |
-| `CharHairGeosets.dbc` | Frisuren-Geometrie |
-| `CharHairTextures.dbc` | Frisuren-Texturen |
-| `CharSections.dbc` | Charakter-Sektionen (Skin, Face, etc.) |
-| `CharStartOutfit.dbc` | Start-Ausrüstung pro Klasse/Rasse |
-| `CharTitles.dbc` | Verfügbare Titel |
-| `CharVariations.dbc` | Charakter-Variationen |
-| `CharacterFacialHairStyles.dbc` | Bart-Stile |
+| `ChrClasses.dbc` | class definitions (name, DisplayPower, flags) |
+| `ChrRaces.dbc` | race definitions (name, faction, models) |
+| `CharBaseInfo.dbc` | base character info |
+| `CharHairGeosets.dbc` | hairstyle geometry |
+| `CharHairTextures.dbc` | hairstyle textures |
+| `CharSections.dbc` | character sections (skin, face, etc.) |
+| `CharStartOutfit.dbc` | starting equipment per class/race |
+| `CharTitles.dbc` | available titles |
+| `CharVariations.dbc` | character variations |
+| `CharacterFacialHairStyles.dbc` | beard styles |
 
-## Item/Loot (16 Dateien)
+## Item/loot (16 files)
 
-| Datei | Inhalt |
+| File | Contents |
 |-------|--------|
-| `Item.dbc` | Item-Basisdaten (Class, Subclass, DisplayInfo, InventoryType) |
-| `ItemBagFamily.dbc` | Taschen-Familien (Ammo, Soul, Herb, etc.) |
-| `ItemClass.dbc` | Item-Klassen (Weapon, Armor, Consumable, etc.) |
-| `ItemCondExtCosts.dbc` | Erweiterte Kosten-Bedingungen |
-| `ItemDisplayInfo.dbc` | Visuelle Item-Darstellung |
-| `ItemExtendedCost.dbc` | Erweiterte Kosten (Honor, Arena, Token) |
-| `ItemGroupSounds.dbc` | Item-Gruppen-Sounds |
-| `ItemLimitCategory.dbc` | Item-Limit-Kategorien (Gems, etc.) |
-| `ItemPetFood.dbc` | Pet-Futter-Typen |
-| `ItemPurchaseGroup.dbc` | Kauf-Gruppen |
-| `ItemRandomProperties.dbc` | "of the Bear"-Zufallseigenschaften |
-| `ItemRandomSuffix.dbc` | Zufalls-Suffix-Enchantments |
-| `ItemSet.dbc` | Set-Definitionen (Items, Set-Boni) |
-| `ItemSubClass.dbc` | Item-Unterklassen |
-| `ItemSubClassMask.dbc` | Unterklassen-Masken |
-| `ItemVisualEffects.dbc` / `ItemVisuals.dbc` | Visuelle Effekte |
+| `Item.dbc` | item base data (class, subclass, DisplayInfo, InventoryType) |
+| `ItemBagFamily.dbc` | bag families (Ammo, Soul, Herb, etc.) |
+| `ItemClass.dbc` | item classes (weapon, armor, consumable, etc.) |
+| `ItemCondExtCosts.dbc` | extended cost conditions |
+| `ItemDisplayInfo.dbc` | visual item display |
+| `ItemExtendedCost.dbc` | extended costs (honor, arena, token) |
+| `ItemGroupSounds.dbc` | item group sounds |
+| `ItemLimitCategory.dbc` | item limit categories (gems, etc.) |
+| `ItemPetFood.dbc` | pet food types |
+| `ItemPurchaseGroup.dbc` | purchase groups |
+| `ItemRandomProperties.dbc` | "of the Bear" random properties |
+| `ItemRandomSuffix.dbc` | random suffix enchantments |
+| `ItemSet.dbc` | set definitions (items, set bonuses) |
+| `ItemSubClass.dbc` | item subclasses |
+| `ItemSubClassMask.dbc` | subclass masks |
+| `ItemVisualEffects.dbc` / `ItemVisuals.dbc` | visual effects |
 
-## Map/Area/Welt (16 Dateien)
+## Map/area/world (16 files)
 
-| Datei | Inhalt |
+| File | Contents |
 |-------|--------|
-| `Map.dbc` | Map-Definitionen (66 Felder, Name, Type, Instance) |
-| `MapDifficulty.dbc` | Schwierigkeitsgrade pro Map |
-| `AreaTable.dbc` | Gebiets-Definitionen (Name, Flags, Level) |
-| `AreaGroup.dbc` | Gebiets-Gruppen |
-| `AreaPOI.dbc` | Points of Interest |
-| `AreaTrigger.dbc` | Trigger-Zonen (Position, Radius) |
-| `WorldMapArea.dbc` | Weltkarten-Gebiete |
-| `WorldMapContinent.dbc` | Weltkarten-Kontinente |
-| `WorldMapOverlay.dbc` | Weltkarten-Overlays |
-| `WorldMapTransforms.dbc` | Weltkarten-Transformationen |
-| `WorldSafeLocs.dbc` | Sichere Positionen (Friedhöfe, etc.) |
-| `WorldStateUI.dbc` | Welt-Status-UI |
-| `WorldStateZoneSounds.dbc` | Zonen-Sounds nach Status |
-| `WorldChunkSounds.dbc` | Chunk-basierte Sounds |
-| `DungeonMap.dbc` / `DungeonMapChunk.dbc` | Dungeon-Karten |
-| `DungeonEncounter.dbc` | Dungeon-Encounter-Definitionen |
+| `Map.dbc` | map definitions (66 fields, name, type, instance) |
+| `MapDifficulty.dbc` | difficulty levels per map |
+| `AreaTable.dbc` | area definitions (name, flags, level) |
+| `AreaGroup.dbc` | area groups |
+| `AreaPOI.dbc` | points of interest |
+| `AreaTrigger.dbc` | trigger zones (position, radius) |
+| `WorldMapArea.dbc` | world map areas |
+| `WorldMapContinent.dbc` | world map continents |
+| `WorldMapOverlay.dbc` | world map overlays |
+| `WorldMapTransforms.dbc` | world map transformations |
+| `WorldSafeLocs.dbc` | safe locations (graveyards, etc.) |
+| `WorldStateUI.dbc` | world state UI |
+| `WorldStateZoneSounds.dbc` | zone sounds by state |
+| `WorldChunkSounds.dbc` | chunk-based sounds |
+| `DungeonMap.dbc` / `DungeonMapChunk.dbc` | dungeon maps |
+| `DungeonEncounter.dbc` | dungeon encounter definitions |
 
-## Talent/Skill (7 Dateien)
+## Talent/skill (7 files)
 
-| Datei | Inhalt |
+| File | Contents |
 |-------|--------|
-| `Talent.dbc` | Talent-Definitionen (TabID, Tier, Column, SpellRank_1-9) |
-| `TalentTab.dbc` | Talent-Tabs (Name, ClassMask, Background) |
-| `SkillLine.dbc` | Skill-Definitionen (Name, Category) |
-| `SkillLineAbility.dbc` | Skill-Fähigkeiten (Spell ↔ Skill Zuordnung) |
-| `SkillLineCategory.dbc` | Skill-Kategorien |
-| `SkillRaceClassInfo.dbc` | Rassen/Klassen-Skill-Info |
-| `SkillTiers.dbc` / `SkillCostsData.dbc` | Skill-Stufen und Kosten |
+| `Talent.dbc` | talent definitions (TabID, tier, column, SpellRank_1-9) |
+| `TalentTab.dbc` | talent tabs (name, ClassMask, background) |
+| `SkillLine.dbc` | skill definitions (name, category) |
+| `SkillLineAbility.dbc` | skill abilities (spell ↔ skill mapping) |
+| `SkillLineCategory.dbc` | skill categories |
+| `SkillRaceClassInfo.dbc` | race/class skill info |
+| `SkillTiers.dbc` / `SkillCostsData.dbc` | skill tiers and costs |
 
-## Kampf-Formeln (gt*.dbc, 12 Dateien)
+## Combat formulas (gt*.dbc, 12 files)
 
-| Datei | Inhalt |
+| File | Contents |
 |-------|--------|
-| `gtBarberShopCostBase.dbc` | Friseur-Kosten pro Level |
-| `gtChanceToMeleeCrit.dbc` | Melee-Crit-Chance pro Level/Klasse |
-| `gtChanceToMeleeCritBase.dbc` | Basis-Melee-Crit |
-| `gtChanceToSpellCrit.dbc` | Spell-Crit-Chance pro Level/Klasse |
-| `gtChanceToSpellCritBase.dbc` | Basis-Spell-Crit |
-| `gtCombatRatings.dbc` | Combat-Rating-Umrechnungen |
-| `gtNPCManaCostScaler.dbc` | NPC-Manakosten-Skalierung |
-| `gtOCTClassCombatRatingScalar.dbc` | Klassen-Combat-Rating-Skalare |
-| `gtOCTRegenHP.dbc` | HP-Regeneration |
-| `gtOCTRegenMP.dbc` | MP-Regeneration |
-| `gtRegenHPPerSpt.dbc` | HP-Regen pro Spirit |
-| `gtRegenMPPerSpt.dbc` | MP-Regen pro Spirit |
+| `gtBarberShopCostBase.dbc` | barber costs per level |
+| `gtChanceToMeleeCrit.dbc` | melee crit chance per level/class |
+| `gtChanceToMeleeCritBase.dbc` | base melee crit |
+| `gtChanceToSpellCrit.dbc` | spell crit chance per level/class |
+| `gtChanceToSpellCritBase.dbc` | base spell crit |
+| `gtCombatRatings.dbc` | combat rating conversions |
+| `gtNPCManaCostScaler.dbc` | NPC mana cost scaling |
+| `gtOCTClassCombatRatingScalar.dbc` | class combat rating scalars |
+| `gtOCTRegenHP.dbc` | HP regeneration |
+| `gtOCTRegenMP.dbc` | MP regeneration |
+| `gtRegenHPPerSpt.dbc` | HP regen per Spirit |
+| `gtRegenMPPerSpt.dbc` | MP regen per Spirit |
 
-## Faction (3 Dateien)
+## Faction (3 files)
 
 `Faction.dbc`, `FactionGroup.dbc`, `FactionTemplate.dbc`
 
-## Transport/Vehicle (7 Dateien)
+## Transport/vehicle (7 files)
 
 `Vehicle.dbc`, `VehicleSeat.dbc`, `VehicleUIIndSeat.dbc`, `VehicleUIIndicator.dbc`, `TransportAnimation.dbc`, `TransportPhysics.dbc`, `TransportRotation.dbc`
 
-## Travel (4 Dateien)
+## Travel (4 files)
 
 `TaxiNodes.dbc`, `TaxiPath.dbc`, `TaxiPathNode.dbc`, `PvpDifficulty.dbc`
 
-## Audio (12 Dateien)
+## Audio (12 files)
 
 `SoundEntries.dbc`, `SoundEntriesAdvanced.dbc`, `SoundEmitters.dbc`, `SoundAmbience.dbc`, `SoundFilter.dbc`, `SoundFilterElem.dbc`, `SoundProviderPreferences.dbc`, `SoundSamplePreferences.dbc`, `SoundWaterType.dbc`, `ZoneMusic.dbc`, `ZoneIntroMusicTable.dbc`, `UISoundLookups.dbc`
 
-## Emotes (4 Dateien)
+## Emotes (4 files)
 
 `Emotes.dbc`, `EmotesText.dbc`, `EmotesTextData.dbc`, `EmotesTextSound.dbc`
 
-## Holidays/Events (3 Dateien)
+## Holidays/events (3 files)
 
 `Holidays.dbc`, `HolidayDescriptions.dbc`, `HolidayNames.dbc`
 
-## Sonstige (restliche Dateien)
+## Other (remaining files)
 
 `AnimationData.dbc`, `AttackAnimKits.dbc`, `AttackAnimTypes.dbc`, `AuctionHouse.dbc`, `BankBagSlotPrices.dbc`, `BannedAddOns.dbc`, `BarberShopStyle.dbc`, `BattlemasterList.dbc`, `CameraShakes.dbc`, `Cfg_Categories.dbc`, `Cfg_Configs.dbc`, `ChatChannels.dbc`, `ChatProfanity.dbc`, `CinematicCamera.dbc`, `CinematicSequences.dbc`, `CreatureDisplayInfo.dbc`, `CreatureDisplayInfoExtra.dbc`, `CreatureFamily.dbc`, `CreatureModelData.dbc`, `CreatureMovementInfo.dbc`, `CreatureSoundData.dbc`, `CreatureSpellData.dbc`, `CreatureType.dbc`, `CurrencyCategory.dbc`, `CurrencyTypes.dbc`, `DanceMoves.dbc`, `DeathThudLookups.dbc`, `DeclinedWord.dbc`, `DeclinedWordCases.dbc`, `DestructibleModelData.dbc`, `DurabilityCosts.dbc`, `DurabilityQuality.dbc`, `EnvironmentalDamage.dbc`, `Exhaustion.dbc`, `FileData.dbc`, `FootprintTextures.dbc`, `FootstepTerrainLookup.dbc`, `GameObjectArtKit.dbc`, `GameObjectDisplayInfo.dbc`, `GameTables.dbc`, `GameTips.dbc`, `GemProperties.dbc`, `GlyphProperties.dbc`, `GlyphSlot.dbc`, `GroundEffectDoodad.dbc`, `GroundEffectTexture.dbc`, `HelmetGeosetVisData.dbc`, `LFGDungeons.dbc`, `LFGDungeonExpansion.dbc`, `LFGDungeonGroup.dbc`, `LanguageWords.dbc`, `Languages.dbc`, `Light.dbc`, `LightFloatBand.dbc`, `LightIntBand.dbc`, `LightParams.dbc`, `LightSkybox.dbc`, `LiquidMaterial.dbc`, `LiquidType.dbc`, `LoadingScreens.dbc`, `LoadingScreenTaxiSplines.dbc`, `Lock.dbc`, `LockType.dbc`, `MailTemplate.dbc`, `Material.dbc`, `Movie.dbc`, `MovieFileData.dbc`, `MovieVariation.dbc`, `NPCSounds.dbc`, `NameGen.dbc`, `NamesProfanity.dbc`, `NamesReserved.dbc`, `ObjectEffect.dbc`, `ObjectEffectGroup.dbc`, `ObjectEffectModifier.dbc`, `ObjectEffectPackage.dbc`, `ObjectEffectPackageElem.dbc`, `OverrideSpellData.dbc`, `Package.dbc`, `PageTextMaterial.dbc`, `PaperDollItemFrame.dbc`, `ParticleColor.dbc`, `PetPersonality.dbc`, `PetitionType.dbc`, `PowerDisplay.dbc`, `QuestFactionReward.dbc`, `QuestInfo.dbc`, `QuestSort.dbc`, `QuestXP.dbc`, `RandPropPoints.dbc`, `Resistances.dbc`, `ScalingStatDistribution.dbc`, `ScalingStatValues.dbc`, `ScreenEffect.dbc`, `ServerMessages.dbc`, `SheatheSoundLookups.dbc`, `SpamMessages.dbc`, `StableSlotPrices.dbc`, `Startup_Strings.dbc`, `Stationery.dbc`, `StringLookups.dbc`, `SummonProperties.dbc`, `TeamContributionPoints.dbc`, `TerrainType.dbc`, `TerrainTypeSounds.dbc`, `TotemCategory.dbc`, `UnitBlood.dbc`, `UnitBloodLevels.dbc`, `VideoHardware.dbc`, `VocalUISounds.dbc`, `WMOAreaTable.dbc`, `WeaponImpactSounds.dbc`, `WeaponSwingSounds2.dbc`, `Weather.dbc`, `WowError_Strings.dbc`, `GMSurveyAnswers.dbc`, `GMSurveyCurrentSurvey.dbc`, `GMSurveyQuestions.dbc`, `GMSurveySurveys.dbc`, `GMTicketCategory.dbc`
 
-## Nicht-DBC-Dateien im dbc/ Ordner
+## Non-DBC files in the dbc/ folder
 
-| Datei | Inhalt |
+| File | Contents |
 |-------|--------|
-| `Map.ini` | Feld-Format-Referenz für Map.dbc (66 Felder, alle ftInteger) |
-| `component.wow-enUS.txt` | Client-Komponenten-Version |
+| `Map.ini` | field-format reference for Map.dbc (66 fields, all ftInteger) |
+| `component.wow-enUS.txt` | client component version |
