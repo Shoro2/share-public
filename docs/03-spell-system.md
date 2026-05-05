@@ -214,6 +214,58 @@ Spell.dbc → sSpellStore → SpellInfo (via SpellMgr)
 
 Full DBC list (246 files) in the legacy `CLAUDE.md` section "DBC file inventory". Binary — do not read directly, use the tools (`python_scripts/patch_dbc.py`, `copy_spells_dbc.py`).
 
+### `spell_dbc` column reference (most relevant fields)
+
+The `spell_dbc` table has 257 columns — it mirrors `Spell.dbc`. The fields below are the ones that come up most often when authoring a custom spell or override:
+
+| Column | Type | Description |
+|--------|-----|-------------|
+| `ID` | uint | Unique spell ID |
+| `Attributes` | uint | Flags: `0x40`=PASSIVE, `0x10000000`=NOT_SHAPESHIFT |
+| `AttributesEx` | uint | Extended flags 1 |
+| `AttributesEx2` | uint | Extended flags 2 |
+| `AttributesEx3` | uint | Extended flags 3 (`0x10000000`=DEATH_PERSISTENT) |
+| `CastingTimeIndex` | uint | 1=instant, other values → `SpellCastTimes.dbc` |
+| `DurationIndex` | uint | 0=instant, 21=permanent, other → `SpellDuration.dbc` |
+| `RangeIndex` | uint | 1=self, 4=30yd, 6=100yd → `SpellRange.dbc` |
+| `ProcTypeMask` | uint | Proc trigger flags (overridden by `spell_proc`) |
+| `ProcChance` | uint | Proc chance (overridden by `spell_proc`) |
+| `Effect_1/2/3` | uint | 2=SCHOOL_DAMAGE, 6=APPLY_AURA, 3=DUMMY |
+| `EffectDieSides_1/2/3` | int | Random range for damage (0=no random) |
+| `EffectBasePoints_1/2/3` | int | Base value (damage, modifier %, etc.) — see off-by-one below |
+| `ImplicitTargetA_1/2/3` | uint | 1=SELF, 6=ENEMY, 22=SRC_AREA_ENEMY |
+| `EffectRadiusIndex_1/2/3` | uint | 8=5yd, 13=8yd, 14=10yd, 28=30yd |
+| `EffectAura_1/2/3` | uint | Aura type: 4=DUMMY, 108=ADD_PCT_MODIFIER |
+| `EffectMiscValue_1/2/3` | int | Aura specific: 0=SPELLMOD_DAMAGE, 11=SPELLMOD_COOLDOWN |
+| `EffectTriggerSpell_1/2/3` | uint | Spell ID triggered on proc |
+| `EffectSpellClassMaskA/B/C_1` | uint | SpellFamilyFlags[0/1/2] of the **target** spell |
+| `SpellFamilyName` | uint | 0=Generic, 4=Warrior, 10=Paladin, 15=DK |
+| `SpellClassMask_1/2/3` | uint | SpellFamilyFlags of **this** spell (for proc matching) |
+| `SpellIconID` | uint | Icon ID from `SpellIcon.dbc` |
+| `MaxTargets` | uint | Max targets (0=unlimited) |
+| `SchoolMask` | uint | 1=Physical, 2=Holy, 4=Fire, 16=Shadow, 32=Arcane |
+| `Name_Lang_enUS` | string | Spell name (English) |
+| `Name_Lang_Mask` | uint | `0x003F3F` = all locales use enUS |
+
+#### Common `EffectAura` values
+
+| Aura ID | Name | MiscValue | Use |
+|---------|------|-----------|-----------|
+| 4 | `DUMMY` | — | Marker aura (C++ checks via `HasAura`) |
+| 42 | `PROC_TRIGGER_SPELL` | — | Triggers another spell on proc |
+| 107 | `ADD_FLAT_MODIFIER` | 0=DAMAGE, 11=COOLDOWN | Flat spell modifier |
+| 108 | `ADD_PCT_MODIFIER` | 0=DAMAGE, 11=COOLDOWN, 14=CAST_TIME | Percent spell modifier |
+
+#### Identifying the target spell via `EffectSpellClassMask`
+
+The mask must match the `SpellFamilyFlags` of the target spell. Three 32-bit fields, one per family-flag word:
+
+- `EffectSpellClassMaskA_1` → `SpellFamilyFlags[0]`
+- `EffectSpellClassMaskB_1` → `SpellFamilyFlags[1]`
+- `EffectSpellClassMaskC_1` → `SpellFamilyFlags[2]`
+
+> **Always verify `SpellFamilyFlags` against your own `Spell.dbc`**, not against online DBs. See the diagnostic LOG_INFO pattern under "Critical: always verify SpellFamilyFlags via debug log" above.
+
 ### DBC override via DB
 
 Example — custom Stamina enchantment for mod-paragon-itemgen:
