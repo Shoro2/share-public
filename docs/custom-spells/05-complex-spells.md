@@ -1,177 +1,177 @@
-# Custom Spells — Complex Spells & Querschnitts-Themen
+# Custom Spells — Complex spells & cross-cutting topics
 
-Die meisten Custom-Spells sind triviale DBC-Modifier. Eine kleine Gruppe ist architektonisch heikel: rekursive Procs, exponentielle DoT-Spreads, Owner-Pet-Aura-Transfer, Custom-NPCs, OnRemove-Detection. Diese Datei sammelt die wiederkehrenden Pattern und listet pro Pattern auf, welche Spells es betreffen.
+Most custom spells are trivial DBC modifiers. A small group is architecturally tricky: recursive procs, exponential DoT spreads, owner-pet aura transfer, custom NPCs, OnRemove detection. This file collects the recurring patterns and lists, per pattern, which spells are affected.
 
-Vor Implementierung dieser Spells: hier durchgehen, dann zurück zum jeweiligen Spec-File für ID/Effekt-Details.
+Before implementing such spells: read this through, then go back to the relevant spec file for ID/effect details.
 
-## Inhalt
+## Contents
 
-- [Rekursionsschutz](#rekursionsschutz)
-- [Target-Cap & exponentielle Propagation](#target-cap--exponentielle-propagation)
-- [Empfohlene ICDs pro Pattern](#empfohlene-icds-pro-pattern)
-- [Custom-NPCs (creature_template)](#custom-npcs-creature_template)
-- [Owner→Pet Aura-Transfer / Pet-Scaling](#ownerpet-aura-transfer--pet-scaling)
-- [OnRemove-Mode-Discrimination](#onremove-mode-discrimination)
-- [Channel vs. Cast vs. Instant](#channel-vs-cast-vs-instant)
-- [Client-DBC-Patches über Server-Override hinaus](#client-dbc-patches-über-server-override-hinaus)
-- [Pet/UnitScript-Performance](#petunitscript-performance)
-- [Aura-Stacks als State-Tracker](#aura-stacks-als-state-tracker)
-- [Heiligenschein der "Besonders aufwändig"-Spells](#heiligenschein-der-besonders-aufwändig-spells)
+- [Recursion guard](#recursion-guard)
+- [Target cap & exponential propagation](#target-cap--exponential-propagation)
+- [Recommended ICDs per pattern](#recommended-icds-per-pattern)
+- [Custom NPCs (creature_template)](#custom-npcs-creature_template)
+- [Owner→Pet aura transfer / pet scaling](#ownerpet-aura-transfer--pet-scaling)
+- [OnRemove mode discrimination](#onremove-mode-discrimination)
+- [Channel vs. cast vs. instant](#channel-vs-cast-vs-instant)
+- [Client DBC patches beyond the server override](#client-dbc-patches-beyond-the-server-override)
+- [Pet/UnitScript performance](#petunitscript-performance)
+- [Aura stacks as a state tracker](#aura-stacks-as-a-state-tracker)
+- [Aura of "particularly elaborate" spells](#aura-of-particularly-elaborate-spells)
 
-## Rekursionsschutz
+## Recursion guard
 
-Procs können Procs auslösen. Wer das ignoriert, baut Endlosschleifen.
+Procs can trigger procs. Ignoring this builds infinite loops.
 
-**Regeln:**
+**Rules:**
 
-1. `PreventDefaultAction()` in `HandleProc()` aufrufen, sonst feuert sowohl der DBC-Default-Trigger als auch der Custom-Cast.
-2. Helper-Spells per `CastSpell(target, ID, true)` triggern (`triggered=true`) — das setzt `SPELL_ATTR4_TRIGGERED`, der Helper kann nicht selbst die Quelle erneut procen.
-3. Für explizit gewollte Ketten: `SPELL_ATTR3_CAN_PROC_FROM_PROCS` setzen — sonst ignorieren Triggered-Spells alle weiteren Procs.
-4. Bei Auto-Attack-Procs (`PROC_FLAG_DONE_MELEE_AUTO_ATTACK`): `SPELL_AURA_ADD_EXTRA_ATTACKS` nutzen (engine-seitiger Schutz) statt manuell `CastSpell` mit Auto-Attack-ID.
+1. Call `PreventDefaultAction()` in `HandleProc()`, otherwise both the DBC default trigger and the custom cast fire.
+2. Trigger helper spells via `CastSpell(target, ID, true)` (`triggered=true`) — that sets `SPELL_ATTR4_TRIGGERED`, the helper cannot proc the source again itself.
+3. For explicitly desired chains: set `SPELL_ATTR3_CAN_PROC_FROM_PROCS` — otherwise triggered spells ignore further procs.
+4. For auto-attack procs (`PROC_FLAG_DONE_MELEE_AUTO_ATTACK`): use `SPELL_AURA_ADD_EXTRA_ATTACKS` (engine-side guard) instead of manually `CastSpell` with the auto-attack ID.
 
-**Betroffene Spells:**
+**Affected spells:**
 
-| Spell | Datei | Risiko |
+| Spell | File | Risk |
 |-------|-------|--------|
-| 901102 Extra Attack 25 % | [global](./specs/global.md) | wiederholt letzten Angriff — Extra-Attack darf nicht selbst proccen |
-| 900304 DK → Death Coil Proc | [death-knight-blood](./specs/death-knight-blood.md) | Death Coil hat eigene Proc-Pipeline |
-| 900274 Pala CS/Judge/DS → Exorcism Buff | [paladin-retribution](./specs/paladin-retribution.md) | Exorcism-Cast verbraucht Buff, sollte aber nicht erneut Buff geben |
-| 900900 Disc Shield Explosion | [priest-discipline](./specs/priest-discipline.md) | Explosion-Cast darf nicht selbst Shield-Remove triggern |
-| 901103 Global 10 % AoE Proc | [global](./specs/global.md) | Damage-Helper auf 10 Targets darf nicht 10 weitere AoE-Procs auslösen |
-| 900800 / 900966 DoT → Shadow-AoE | [warlock-affliction](./specs/warlock-affliction.md), [priest-shadow](./specs/priest-shadow.md) | AoE-Damage darf nicht erneut DoT-Tick-Proc triggern |
+| 901102 Extra Attack 25 % | [global](./specs/global.md) | repeats the last attack — the extra attack must not proc itself |
+| 900304 DK → Death Coil proc | [death-knight-blood](./specs/death-knight-blood.md) | Death Coil has its own proc pipeline |
+| 900274 Pala CS/Judge/DS → Exorcism buff | [paladin-retribution](./specs/paladin-retribution.md) | Exorcism cast consumes the buff but must not regrant it |
+| 900900 Disc Shield Explosion | [priest-discipline](./specs/priest-discipline.md) | the explosion cast must not trigger another shield removal |
+| 901103 Global 10 % AoE proc | [global](./specs/global.md) | damage helper on 10 targets must not trigger 10 more AoE procs |
+| 900800 / 900966 DoT → shadow AoE | [warlock-affliction](./specs/warlock-affliction.md), [priest-shadow](./specs/priest-shadow.md) | the AoE damage must not trigger another DoT-tick proc |
 
-## Target-Cap & exponentielle Propagation
+## Target cap & exponential propagation
 
-Spells, die DoTs/Buffs auf neue Targets verbreiten, können exponentiell wachsen.
+Spells that propagate DoTs/buffs to new targets can grow exponentially.
 
-**Regeln:**
+**Rules:**
 
-1. **Hard-Cap pro Cast** — nie mehr als N neue Targets pro Tick.
-2. **Hard-Cap pro Player** — max. K aktive Spread-DoTs gleichzeitig (z. B. über Counter-Aura).
-3. **"DoT NICHT haben"-Filter** — nur auf Targets ohne den Spread-DoT casten, sonst wird die Aura-Refresh-Schleife zur Infinity-Renewal.
-4. **ICD auf der Source-Aura** (nicht nur am Target) — verhindert Spam bei vielen Tick-Quellen gleichzeitig.
+1. **Hard cap per cast** — never more than N new targets per tick.
+2. **Hard cap per player** — max K active spread DoTs at the same time (e.g. via a counter aura).
+3. **"Does NOT have the DoT" filter** — only cast on targets without the spread DoT, otherwise the aura refresh loop becomes infinite renewal.
+4. **ICD on the source aura** (not just on the target) — prevents spam when many tick sources fire simultaneously.
 
-**Betroffene Spells:**
+**Affected spells:**
 
-| Spell | Datei | Worst-Case |
+| Spell | File | Worst case |
 |-------|-------|-----------|
-| 900802 Warlock DoT Spread | [warlock-affliction](./specs/warlock-affliction.md) | 1 → 3 → 9 → 27 Targets in 3 Ticks |
-| 900967 Priest DoT Spread | [priest-shadow](./specs/priest-shadow.md) | identisch — Code shareable |
-| 901103 Global AoE Proc | [global](./specs/global.md) | 10 Targets/Hit × viele Hits/sec |
-| 900533 Hunter Auto Shot Bounce | [hunter-marksmanship](./specs/hunter-marksmanship.md) | 9 Targets pro Auto Shot, schnelle Auto-Frequenz |
+| 900802 Warlock DoT spread | [warlock-affliction](./specs/warlock-affliction.md) | 1 → 3 → 9 → 27 targets in 3 ticks |
+| 900967 Priest DoT spread | [priest-shadow](./specs/priest-shadow.md) | identical — code shareable |
+| 901103 global AoE proc | [global](./specs/global.md) | 10 targets/hit × many hits/sec |
+| 900533 Hunter Auto Shot bounce | [hunter-marksmanship](./specs/hunter-marksmanship.md) | 9 targets per Auto Shot, fast auto-attack frequency |
 
-**Empfohlene Caps:**
+**Recommended caps:**
 
 ```cpp
 // In HandleProc
 static constexpr int MAX_SPREAD_PER_TICK = 2;
 static constexpr int MAX_ACTIVE_SPREADS  = 8;
-// Optional: Counter-Aura auf Caster, die pro Spread-Apply +1 Stack bekommt.
+// Optional: counter aura on the caster, +1 stack per spread apply.
 ```
 
-## Empfohlene ICDs pro Pattern
+## Recommended ICDs per pattern
 
-Proc-Patterns haben sich als Default-ICDs bewährt. `spell_proc.Cooldown` in ms.
+Proc patterns have established default ICDs. `spell_proc.Cooldown` in ms.
 
-| Pattern | Default-ICD | Quelle |
+| Pattern | Default ICD | Source |
 |---------|-------------|--------|
-| DoT-Tick → AoE-Damage | 2000 ms | 900800, 900966 |
-| AoE-Proc auf Hit | 1000 ms | 901103 |
-| Block/Dodge → Counter | 1000 ms | 900172, 901104 |
-| Periodic-Heal → Summon | 5000 ms | 901066 Treant |
-| Auto-Attack → Summon | 5000 ms | 900436 Spirit Wolf |
-| Crit-Streak Effekte | 0–500 ms | inhärent rate-limited |
-| Kill-Proc | 0 ms | natürlich rate-limited |
-| Low-HP-Trigger | 60000 ms | 900708 Mage Mana Shield |
+| DoT tick → AoE damage | 2000 ms | 900800, 900966 |
+| AoE proc on hit | 1000 ms | 901103 |
+| Block/dodge → counter | 1000 ms | 900172, 901104 |
+| Periodic heal → summon | 5000 ms | 901066 Treant |
+| Auto-attack → summon | 5000 ms | 900436 Spirit Wolf |
+| Crit-streak effects | 0–500 ms | inherently rate-limited |
+| Kill proc | 0 ms | naturally rate-limited |
+| Low-HP trigger | 60000 ms | 900708 Mage Mana Shield |
 
-ICD von 0 nur, wenn das Trigger-Event selbst rare ist (Kill, Death). Für alle Damage-/Heal-Patterns ist ein nicht-trivialer ICD Pflicht.
+ICD of 0 only when the trigger event itself is rare (kill, death). For all damage/heal patterns a non-trivial ICD is mandatory.
 
-## Custom-NPCs (creature_template)
+## Custom NPCs (creature_template)
 
-Mehrere Spells beschwören NPCs, die eigene Einträge in `creature_template` brauchen — plus eigene AI/Script bei nicht-trivialem Verhalten.
+Several spells summon NPCs that need their own entries in `creature_template` — plus their own AI/script for non-trivial behavior.
 
-| NPC-ID | Name | Source-Spell | Script | Notes |
+| NPC ID | Name | Source spell | Script | Notes |
 |--------|------|--------------|--------|-------|
-| 900333 | Frost Wyrm | 900333 | `npc_custom_frost_wyrm` | DisplayID 26752 (Sindragosa), Scale 0.5, 2× Gargoyle HP, castet 900368 Frost Breath |
-| 900436 | Spirit Wolf (Enh) | 900436 Auto-Wolf | (keine eigene AI) | DisplayID 27074, 15 s Duration |
-| 901066 | Healing Treant | 901066 | (keine eigene AI) | 30 s Duration, attackiert Feinde oder folgt Player |
-| TBD | Lesser Demons (Imp/VW/Succ/FH/FG) | 900835 | TBD | Pro Pet-Typ ein NPC-Eintrag, 50 % HP/Damage des Originals |
+| 900333 | Frost Wyrm | 900333 | `npc_custom_frost_wyrm` | DisplayID 26752 (Sindragosa), scale 0.5, 2× Gargoyle HP, casts 900368 Frost Breath |
+| 900436 | Spirit Wolf (Enh) | 900436 auto-wolf | (no own AI) | DisplayID 27074, 15 s duration |
+| 901066 | Healing Treant | 901066 | (no own AI) | 30 s duration, attacks enemies or follows the player |
+| TBD | Lesser Demons (Imp/VW/Succ/FH/FG) | 900835 | TBD | one NPC entry per pet type, 50 % HP/damage of the original |
 
-**Pflicht-Schritte für neuen Summon-NPC:**
+**Required steps for a new summon NPC:**
 
-1. Entry in `creature_template` (DisplayID, MinLevel/MaxLevel, Faction, KillCredit=0, ScriptName).
-2. Falls AI: `creature_template_addon` mit `auras` (Combat-Auras) und ggf. `npc_<name>` C++-Klasse.
-3. Pet-Type entscheidet ob `creature_template.unit_class` und Pet-Skills relevant sind.
-4. Test mit `.npc spawn <id>` vor Hook-Integration.
+1. Entry in `creature_template` (DisplayID, MinLevel/MaxLevel, faction, KillCredit=0, ScriptName).
+2. If AI: `creature_template_addon` with `auras` (combat auras) and optionally an `npc_<name>` C++ class.
+3. Pet type decides whether `creature_template.unit_class` and pet skills are relevant.
+4. Test with `.npc spawn <id>` before hook integration.
 
-## Owner→Pet Aura-Transfer / Pet-Scaling
+## Owner→Pet aura transfer / pet scaling
 
-Mehrere Spells erhöhen Pet-Damage oder geben Pet-Buffs, während die Aura auf dem Owner sitzt.
+Several spells boost pet damage or grant pet buffs while the aura sits on the owner.
 
-**Drei Varianten:**
+**Three variants:**
 
-1. **`UnitScript::OnDamage`-Filter** — die Aura ist Marker auf Owner, das UnitScript prüft `attacker.IsPet() && attacker.GetOwner()->HasAura(MARKER)` und multipliziert Damage. **Performance-Falle**: feuert für ALLE Damage-Events server-weit. Verwendung: 900502 (BM Pet +50 %), 900438 (Wolf CL Proc).
-2. **`Pet::ApplyAllAuras`-Loop** — beim Pet-Summon werden Owner-Auras explizit auf das Pet gespiegelt. Sauberer, aber State-Drift bei Aura-Changes nach dem Summon.
-3. **Spell-Modifier mit MaskA auf Pet-Spell-Family** — wenn der Pet-Spell SpellFamilyName != 0 hat, kann eine Aura auf Owner via `EffectSpellClassMaskA` direkt den Pet-Cast modifizieren. Beispiel 900836 (Imp Firebolt +50 %).
+1. **`UnitScript::OnDamage` filter** — the aura is a marker on the owner; the UnitScript checks `attacker.IsPet() && attacker.GetOwner()->HasAura(MARKER)` and multiplies damage. **Performance trap**: fires for ALL damage events server-wide. Used by: 900502 (BM Pet +50 %), 900438 (Wolf CL proc).
+2. **`Pet::ApplyAllAuras` loop** — on pet summon, owner auras are explicitly mirrored onto the pet. Cleaner, but state drift on aura changes after the summon.
+3. **Spell modifier with MaskA on the pet spell family** — when the pet spell has SpellFamilyName != 0, an aura on the owner via `EffectSpellClassMaskA` can directly modify the pet cast. Example 900836 (Imp Firebolt +50 %).
 
-**Performance-Hinweis**: Variante 1 immer mit Early-Exit-Check (`if (!attacker || !attacker->IsCreature()) return;`) am Start des Scripts.
+**Performance hint**: variant 1 always with an early-exit check (`if (!attacker || !attacker->IsCreature()) return;`) at the top of the script.
 
-**Betroffene Spells:**
+**Affected spells:**
 
-| Spell | Variante | Datei |
+| Spell | Variant | File |
 |-------|----------|-------|
-| 900435 Shaman Summons +50 % | TBD (aktuell nur Marker) | [shaman-enhancement](./specs/shaman-enhancement.md) |
-| 900502 BM Pet Damage +50 % | 1 | [hunter-beast-mastery](./specs/hunter-beast-mastery.md) |
-| 900503 BM Pet Speed +50 % | PlayerScript-Tick | [hunter-beast-mastery](./specs/hunter-beast-mastery.md) |
-| 900437 Spirit Wolves inherit Haste | bei Summon (3) | [shaman-enhancement](./specs/shaman-enhancement.md) |
+| 900435 Shaman summons +50 % | TBD (currently marker only) | [shaman-enhancement](./specs/shaman-enhancement.md) |
+| 900502 BM Pet damage +50 % | 1 | [hunter-beast-mastery](./specs/hunter-beast-mastery.md) |
+| 900503 BM Pet speed +50 % | PlayerScript tick | [hunter-beast-mastery](./specs/hunter-beast-mastery.md) |
+| 900437 Spirit Wolves inherit haste | on summon (3) | [shaman-enhancement](./specs/shaman-enhancement.md) |
 | 900836 Imp Firebolt +50 % | 3 | [warlock-demonology](./specs/warlock-demonology.md) |
 | 900839 Felguard +50 % | 2 | [warlock-demonology](./specs/warlock-demonology.md) |
-| 901067 Druid Summons scale with Healing Power | PlayerScript-Tick | [druid-restoration](./specs/druid-restoration.md) |
+| 901067 Druid summons scale with healing power | PlayerScript tick | [druid-restoration](./specs/druid-restoration.md) |
 
-## OnRemove-Mode-Discrimination
+## OnRemove mode discrimination
 
-Auras können aus vielen Gründen entfernt werden — Expire, Dispel, Death, Cancel, Replace. Manche Spells sollen nur bei einem bestimmten Mode auslösen.
+Auras can be removed for many reasons — expire, dispel, death, cancel, replace. Some spells should fire only on a specific mode.
 
 ```cpp
 void HandleRemove(AuraEffect const* aurEff, AuraEffectHandleModes mode)
 {
     AuraRemoveMode removeMode = GetAura()->GetRemoveMode();
-    if (removeMode == AURA_REMOVE_BY_EXPIRE      // Duration abgelaufen
+    if (removeMode == AURA_REMOVE_BY_EXPIRE      // duration ran out
      || removeMode == AURA_REMOVE_BY_ENEMY_SPELL // dispelled / broken
-     || removeMode == AURA_REMOVE_BY_DEATH)       // Caster oder Target tot
+     || removeMode == AURA_REMOVE_BY_DEATH)       // caster or target died
     {
-        // gewollte Cases
+        // desired cases
     }
     else if (removeMode == AURA_REMOVE_BY_CANCEL)
     {
-        // Player hat Right-Click Cancel — oft NICHT gewollt
+        // Player right-click cancel — often NOT desired
         return;
     }
 }
 ```
 
-**Betroffene Spells:**
+**Affected spells:**
 
-| Spell | Use-Case | Datei |
+| Spell | Use case | File |
 |-------|----------|-------|
-| 900900 Disc Shield Explosion | Explosion nur bei FADE oder ENEMY_BREAK, nicht bei Right-Click-Cancel | [priest-discipline](./specs/priest-discipline.md) |
-| 901068 Druid Summon-Death-Heal | Heal nur wenn Summon stirbt, nicht bei Despawn-by-Owner-Logout | [druid-restoration](./specs/druid-restoration.md) |
-| 900833 Demo Meta Duration Extend | nur bei Kill-Event während Aura aktiv — OnRemove ist hier irrelevant, aber Duration-Manipulation darf Aura nicht selbst entfernen | [warlock-demonology](./specs/warlock-demonology.md) |
+| 900900 Disc Shield Explosion | explosion only on FADE or ENEMY_BREAK, not on right-click cancel | [priest-discipline](./specs/priest-discipline.md) |
+| 901068 Druid summon death heal | heal only when the summon dies, not on despawn-by-owner-logout | [druid-restoration](./specs/druid-restoration.md) |
+| 900833 Demo Meta duration extend | only on a kill event while the aura is active — OnRemove is irrelevant here, but the duration manipulation must not remove the aura itself | [warlock-demonology](./specs/warlock-demonology.md) |
 
-## Channel vs. Cast vs. Instant
+## Channel vs. cast vs. instant
 
-Drei Spell-Kategorien mit verschiedenen Hooks und unterschiedlichem Verhalten bei Movement/Interrupt.
+Three spell categories with different hooks and different behavior on movement/interrupt.
 
-| Kategorie | Beispiel | Hook | Movement-Check |
+| Category | Example | Hook | Movement check |
 |-----------|----------|------|----------------|
 | Channel | Evocation 12051, Mind Flay 48156 | `Spell::HandleChannelTick`, `Spell::ChannelInterrupt` | `SPELL_ATTR5_CAN_CHANNEL_WHEN_MOVING` |
-| Cast (mit Cast-Time) | Frostbolt, Shadow Bolt | `Spell::CheckCast` → `SPELL_FAILED_MOVING` | nur Channel-Flag reicht NICHT |
-| Instant | Mortal Strike, Whirlwind | kein Movement-Check | irrelevant |
+| Cast (with cast time) | Frostbolt, Shadow Bolt | `Spell::CheckCast` → `SPELL_FAILED_MOVING` | the channel flag alone is NOT enough |
+| Instant | Mortal Strike, Whirlwind | no movement check | irrelevant |
 
-**901100 Cast While Moving** muss alle drei Kategorien abdecken:
+**901100 Cast While Moving** must cover all three categories:
 
 ```cpp
-// Hook auf Spell::CheckCast vor SPELL_FAILED_MOVING:
+// Hook on Spell::CheckCast before SPELL_FAILED_MOVING:
 SpellCastResult check = origCheckCast(...);
 if (check == SPELL_FAILED_MOVING
     && caster->ToPlayer()
@@ -179,94 +179,94 @@ if (check == SPELL_FAILED_MOVING
     return SPELL_CAST_OK;  // bypass
 ```
 
-Für Channels reicht das nicht — dort braucht es zusätzlich `SPELL_AURA_CAST_WHILE_WALKING` (Aura 330) auf der 901100-Aura. Detail: [global.md](./specs/global.md).
+Channels need more — there `SPELL_AURA_CAST_WHILE_WALKING` (aura 330) on the 901100 aura is additionally required. Detail: [global.md](./specs/global.md).
 
-## Client-DBC-Patches über Server-Override hinaus
+## Client DBC patches beyond the server override
 
-Server-`spell_dbc` reicht nicht für alle Fälle. Folgende Spells brauchen einen **Client-DBC-Patch** (`python_scripts/patch_dbc.py` in [share-public](https://github.com/Shoro2/share-public)):
+Server `spell_dbc` is not enough in all cases. The following spells need a **client DBC patch** (`python_scripts/patch_dbc.py` in [share-public](https://github.com/Shoro2/share-public)):
 
-| Spell | Was muss am Client gepatcht werden | Datei |
+| Spell | What must be patched on the client | File |
 |-------|--------------------------------------|-------|
-| Sichtbare Custom-Spells (Tooltip-Anzeige) | `Spell.dbc` Eintrag mit Name + Description | alle Spec-Files |
+| Visible custom spells (tooltip display) | `Spell.dbc` entry with name + description | all spec files |
 | 900205/900234/900268 Consecration around you | `Consecration` (48819): TargetA → `TARGET_DEST_CASTER` | [paladin-holy](./specs/paladin-holy.md) |
-| 900270 Divine Storm +6 Targets | `Divine Storm` (53385): `MaxAffectedTargets` → 10 | [paladin-retribution](./specs/paladin-retribution.md) |
-| 900709 Blink Target Location | `Blink` (1953): TargetType → `TARGET_DEST_DEST` (Ground-Target-Cursor) | [mage-arcane](./specs/mage-arcane.md) |
+| 900270 Divine Storm +6 targets | `Divine Storm` (53385): `MaxAffectedTargets` → 10 | [paladin-retribution](./specs/paladin-retribution.md) |
+| 900709 Blink target location | `Blink` (1953): TargetType → `TARGET_DEST_DEST` (ground target cursor) | [mage-arcane](./specs/mage-arcane.md) |
 | 900737 Fire Blast off-GCD | `Fire Blast` (42873): `StartRecoveryCategory` = 0 | [mage-fire](./specs/mage-fire.md) |
-| 900770 Water Elemental permanent | Summon Duration → -1 oder sehr hoch | [mage-frost](./specs/mage-frost.md) |
+| 900770 Water Elemental permanent | summon duration → -1 or very high | [mage-frost](./specs/mage-frost.md) |
 
-Server-spell_dbc reicht für Effekt-Logik, aber NICHT für Target-Selection-Cursor und auch nicht für GCD-Verhalten beim Client (der Client zeigt sonst falsche Cooldowns).
+Server spell_dbc is enough for effect logic, but NOT for the target selection cursor and not for client-side GCD behavior (otherwise the client would show wrong cooldowns).
 
-## Pet/UnitScript-Performance
+## Pet/UnitScript performance
 
-UnitScripts hängen sich an global feuernde Events (`OnDamage`, `OnUnitDeath`, ...). Sie laufen für **alle** Units server-weit — schlampig geschriebene Filter können den Server merklich verlangsamen.
+UnitScripts hook into globally firing events (`OnDamage`, `OnUnitDeath`, ...). They run for **every** unit server-wide — sloppy filters can noticeably slow the server down.
 
-**Pflicht-Pattern am Anfang jedes UnitScripts:**
+**Mandatory pattern at the top of every UnitScript:**
 
 ```cpp
 void OnDamage(Unit* attacker, Unit* victim, uint32& damage, ...) override
 {
     if (!attacker || !victim) return;
-    if (!attacker->IsCreature()) return;        // sonst hooked auf Player-Damage
+    if (!attacker->IsCreature()) return;        // otherwise hooks on player damage
     Creature* c = attacker->ToCreature();
-    if (!c->IsPet()) return;                    // nur Pets relevant
+    if (!c->IsPet()) return;                    // only pets are relevant
     Player* owner = c->GetOwner() ? c->GetOwner()->ToPlayer() : nullptr;
     if (!owner || !owner->HasAura(MARKER)) return;
-    // ab hier echte Logik
+    // real logic from here
 }
 ```
 
-**Betroffene Spells:**
+**Affected spells:**
 
-| Spell | Hook | Datei |
+| Spell | Hook | File |
 |-------|------|-------|
-| 900438 Wolf CL on Hit | `UnitScript::OnDamage` | [shaman-enhancement](./specs/shaman-enhancement.md) |
-| 900502 / 900504 BM Pet Damage / Cleave | `UnitScript::OnDamage` | [hunter-beast-mastery](./specs/hunter-beast-mastery.md) |
-| 901068 Druid Summon Death-Heal | `UnitScript::OnUnitDeath` | [druid-restoration](./specs/druid-restoration.md) |
-| 901069 Druid Thorns → Rejuv | `UnitScript::OnDamage` (auf Victim=Player) | [druid-restoration](./specs/druid-restoration.md) |
+| 900438 Wolf CL on hit | `UnitScript::OnDamage` | [shaman-enhancement](./specs/shaman-enhancement.md) |
+| 900502 / 900504 BM Pet damage / cleave | `UnitScript::OnDamage` | [hunter-beast-mastery](./specs/hunter-beast-mastery.md) |
+| 901068 Druid summon death heal | `UnitScript::OnUnitDeath` | [druid-restoration](./specs/druid-restoration.md) |
+| 901069 Druid Thorns → Rejuv | `UnitScript::OnDamage` (on Victim=Player) | [druid-restoration](./specs/druid-restoration.md) |
 
-## Aura-Stacks als State-Tracker
+## Aura stacks as a state tracker
 
-Manche Spells nutzen Aura-Stack-Counts als impliziten Charge-/State-Zähler statt eigener DB- oder Member-Variablen. Funktioniert, hat aber Edge Cases.
+Some spells use aura stack counts as an implicit charge/state counter instead of their own DB or member variables. Works, but has edge cases.
 
-**Pattern (z. B. 900406 LvB Two-Charges):**
+**Pattern (e.g. 900406 LvB two-charges):**
 
 ```cpp
 // CumulativeAura = 2 in DBC
-// AfterCast: Stack==1 → reset CD (free second cast); Stack==2 → normal CD, decrease stack
+// AfterCast: stack==1 → reset CD (free second cast); stack==2 → normal CD, decrease stack
 ```
 
-**Edge Cases:**
+**Edge cases:**
 
-- Schnelles Casten kann zwischen Stack-Update und CD-Check eine Race haben.
-- `RemoveAura`-Calls von außen (Dispel, Cancel) zerstören den State.
-- Aura-Refresh resetet Duration aber nicht zwingend Stack — abhängig vom DBC-`StackAmount`-Wert und `OverrideOldestAura`-Flag.
+- Fast casting can race between stack update and CD check.
+- External `RemoveAura` calls (dispel, cancel) destroy the state.
+- Aura refresh resets duration but not necessarily the stack — depends on the DBC `StackAmount` value and the `OverrideOldestAura` flag.
 
-Wenn der State über Logout/Login überleben muss: nicht Stacks, sondern eigene DB-Tabelle nutzen.
+If the state must survive logout/login: don't use stacks, use a dedicated DB table.
 
-## Heiligenschein der "Besonders aufwändig"-Spells
+## Aura of "particularly elaborate" spells
 
-Spells, die in den Spec-Files explizit als _besonders aufwändig_ oder _stark balance-relevant_ markiert sind, in einer Tabelle:
+Spells that the spec files explicitly mark as _particularly elaborate_ or _strongly balance-relevant_, in one table:
 
-| Spell | Risiko-Hauptgrund | Datei |
+| Spell | Main risk reason | File |
 |-------|-------------------|-------|
-| 901100 Cast While Moving | für alle Caster gleichzeitig aktiv — Channel + Cast + Interruptible | [global](./specs/global.md) |
-| 901102 Extra Attack 25 % | rekursive Procs | [global](./specs/global.md) |
-| 901103 10 % AoE Proc | Spam bei DoT-Ticks | [global](./specs/global.md) |
-| 900802 Warlock DoT Spread | exponentielle Propagation | [warlock-affliction](./specs/warlock-affliction.md) |
-| 900835 Lesser Demons | Custom Creature-Templates pro Pet-Typ + AI | [warlock-demonology](./specs/warlock-demonology.md) |
-| 900840 Sacrifice All Bonuses | mehrere Pet-Typ-Buffs gleichzeitig identifizieren und stacken | [warlock-demonology](./specs/warlock-demonology.md) |
-| 900833 + 900834 Demo Meta-Combo | permanent transformierter AoE-Healer-Tank-Hybrid | [warlock-demonology](./specs/warlock-demonology.md) |
-| 900900 Disc Shield Explosion | OnRemove-Detection + Damage-Skalierung am Absorb-Wert | [priest-discipline](./specs/priest-discipline.md) |
-| 900933 Heal → Holy Fire AoE | Direct-Heal-vs-HoT-Filter | [priest-holy](./specs/priest-holy.md) |
-| 900701 Mage Mana Regen Scaling | dynamische Berechnung pro Regen-Tick | [mage-arcane](./specs/mage-arcane.md) |
-| 900709 Blink Target Location | Client-seitiger Ground-Target-Cursor | [mage-arcane](./specs/mage-arcane.md) |
-| 900738 Pyro → Hot Streak Loop | guaranteed Instant-Pyro-Chain, balance-kritisch | [mage-fire](./specs/mage-fire.md) |
-| 900771 Frost Comet Shower | komplett neuer Spell mit Custom-Visuals | [mage-frost](./specs/mage-frost.md) |
-| 900534 Hunter Multi-Shot Barrage | 20 Multi-Shots in 2 s, Performance | [hunter-marksmanship](./specs/hunter-marksmanship.md) |
-| 900300 / 900301 DK Triple DRW + Double-Cast | Aura-Stacking-Issues bei Triggered-Re-Cast | [death-knight-blood](./specs/death-knight-blood.md) |
-| 900333 Frost Wyrm | Custom NPC + AI + skalierter Frost Breath | [death-knight-frost](./specs/death-knight-frost.md) |
-| 900274 Pala Exorcism Buff | Stacking-Buff mit Konsum bei Exorcism-Cast | [paladin-retribution](./specs/paladin-retribution.md) |
-| 900407 Sham LvB Instant via Clearcasting | Cast-Time-Modifier auf einen instant-machbaren Spell | [shaman-elemental](./specs/shaman-elemental.md) |
-| 901071 Druid HoT 2x Ticks/Duration | Ticks vs. Duration Trade-off | [druid-restoration](./specs/druid-restoration.md) |
+| 901100 Cast while moving | active for all casters at once — channel + cast + interruptible | [global](./specs/global.md) |
+| 901102 Extra Attack 25 % | recursive procs | [global](./specs/global.md) |
+| 901103 10 % AoE proc | spam on DoT ticks | [global](./specs/global.md) |
+| 900802 Warlock DoT spread | exponential propagation | [warlock-affliction](./specs/warlock-affliction.md) |
+| 900835 Lesser demons | custom creature templates per pet type + AI | [warlock-demonology](./specs/warlock-demonology.md) |
+| 900840 Sacrifice all bonuses | identify and stack multiple pet-type buffs at once | [warlock-demonology](./specs/warlock-demonology.md) |
+| 900833 + 900834 Demo Meta combo | permanently transformed AoE healer-tank hybrid | [warlock-demonology](./specs/warlock-demonology.md) |
+| 900900 Disc Shield Explosion | OnRemove detection + damage scaling on the absorb amount | [priest-discipline](./specs/priest-discipline.md) |
+| 900933 Heal → Holy Fire AoE | direct-heal-vs-HoT filter | [priest-holy](./specs/priest-holy.md) |
+| 900701 Mage mana regen scaling | dynamic computation per regen tick | [mage-arcane](./specs/mage-arcane.md) |
+| 900709 Blink target location | client-side ground target cursor | [mage-arcane](./specs/mage-arcane.md) |
+| 900738 Pyro → Hot Streak loop | guaranteed instant Pyro chain, balance-critical | [mage-fire](./specs/mage-fire.md) |
+| 900771 Frost Comet Shower | entirely new spell with custom visuals | [mage-frost](./specs/mage-frost.md) |
+| 900534 Hunter Multi-Shot Barrage | 20 Multi-Shots in 2 s, performance | [hunter-marksmanship](./specs/hunter-marksmanship.md) |
+| 900300 / 900301 DK triple DRW + double-cast | aura stacking issues on triggered re-cast | [death-knight-blood](./specs/death-knight-blood.md) |
+| 900333 Frost Wyrm | custom NPC + AI + scaled Frost Breath | [death-knight-frost](./specs/death-knight-frost.md) |
+| 900274 Pala Exorcism buff | stacking buff with consumption on Exorcism cast | [paladin-retribution](./specs/paladin-retribution.md) |
+| 900407 Sham LvB instant via Clearcasting | cast-time modifier on a spell that can already be made instant | [shaman-elemental](./specs/shaman-elemental.md) |
+| 901071 Druid HoT 2x ticks/duration | ticks vs. duration trade-off | [druid-restoration](./specs/druid-restoration.md) |
 
-Vor Implementierung: erst dieses Dokument durchgehen, dann den passenden Pattern-Abschnitt oben, dann das Spec-File.
+Before implementation: read this document first, then the relevant pattern section above, then the spec file.
