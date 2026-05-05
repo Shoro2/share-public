@@ -1,42 +1,42 @@
 # CLAUDE.md
 
-Zentrale Informationsgrundlage für KI-Assistenten am Custom WoW Server (WotLK 3.3.5a, AzerothCore-basiert). **Diese Datei ist nur ein Wegweiser** — die eigentlichen Inhalte liegen thematisch geteilt in `docs/`. Lade jeweils nur die Dokumente, die du für deine Aufgabe brauchst.
+Central information base for AI assistants on the Custom WoW server (WotLK 3.3.5a, AzerothCore-based). **This file is only a signpost** — the actual content is split by topic in `docs/`. Load only the documents you need for your task.
 
-## Lese-Strategie für KI
+## Reading strategy for AI
 
-> Lies **niemals** alle Dokumente am Stück. Springe gezielt nach Thema. Vollständige Strategie: [docs/08-ai-workflow.md](./docs/08-ai-workflow.md).
+> **Never** read all documents at once. Jump in by topic. Full strategy: [docs/08-ai-workflow.md](./docs/08-ai-workflow.md).
 
-## Doc-Index
+## Doc index
 
-| Datei | Inhalt |
+| File | Contents |
 |-------|--------|
-| [docs/01-repos.md](./docs/01-repos.md) | Alle 7 Repos im Detail, share-public-Verzeichnisstruktur, Python-Scripts |
-| [docs/02-architecture.md](./docs/02-architecture.md) | Server-Architektur (auth/world), 3 Datenbanken, Quellcode-Layout |
-| [docs/03-spell-system.md](./docs/03-spell-system.md) | SpellScript/AuraScript, Proc-System, DBC-Lade-Mechanik, Override-Pfade |
-| [docs/04-aio-framework.md](./docs/04-aio-framework.md) | AIO Server↔Client UI-Kommunikation, Handler-Pattern, Client-Addon |
-| [docs/05-modules.md](./docs/05-modules.md) | Modul-System, Custom Spells, Paragon, Itemgen, Loot-Filter, Endless Storage |
-| [docs/06-custom-ids.md](./docs/06-custom-ids.md) | Spell-/Item-/NPC-/Enchant-IDs des Projekts |
-| [docs/07-codestyle.md](./docs/07-codestyle.md) | C++/SQL/Lua Code-Style, CI-Anforderungen |
-| [docs/08-ai-workflow.md](./docs/08-ai-workflow.md) | AI-Workflow, Lese-/Schreibstrategie, Logging-Pflicht |
-| [docs/09-db-tables.md](./docs/09-db-tables.md) | DB-Tabellen-Inventar nach Kategorie (Custom + AzerothCore) |
-| [docs/10-dbc-inventory.md](./docs/10-dbc-inventory.md) | DBC-Datei-Inventar (246 Dateien) nach Kategorie |
+| [docs/01-repos.md](./docs/01-repos.md) | All 7 repos in detail, share-public directory structure, Python scripts |
+| [docs/02-architecture.md](./docs/02-architecture.md) | Server architecture (auth/world), 3 databases, source code layout |
+| [docs/03-spell-system.md](./docs/03-spell-system.md) | SpellScript/AuraScript, proc system, DBC loading, override paths |
+| [docs/04-aio-framework.md](./docs/04-aio-framework.md) | AIO server↔client UI communication, handler patterns, client addon |
+| [docs/05-modules.md](./docs/05-modules.md) | Module system, Custom Spells, Paragon, Itemgen, Loot Filter, Endless Storage |
+| [docs/06-custom-ids.md](./docs/06-custom-ids.md) | Spell/item/NPC/enchant IDs of the project |
+| [docs/07-codestyle.md](./docs/07-codestyle.md) | C++/SQL/Lua code style, CI requirements |
+| [docs/08-ai-workflow.md](./docs/08-ai-workflow.md) | AI workflow, read/write strategy, logging duty |
+| [docs/09-db-tables.md](./docs/09-db-tables.md) | DB table inventory by category (Custom + AzerothCore) |
+| [docs/10-dbc-inventory.md](./docs/10-dbc-inventory.md) | DBC file inventory (246 files) by category |
 
-## Repo-Karte
+## Repo map
 
-| Repo | Zweck | Pfad lokal |
+| Repo | Purpose | Local path |
 |------|-------|------------|
-| `azerothcore-wotlk` | Server-Core (C++17, CMake, MySQL) | `/home/user/azerothcore-wotlk` |
-| `mod-paragon` | Account-weites Paragon-Level + Stat-Punkte | `/home/user/mod-paragon` |
-| `mod-paragon-itemgen` | 5-Slot Bonus-Enchantments auf Items | `/home/user/mod-paragon-itemgen` |
-| `mod-loot-filter` | Charakter-spezifische Loot-Filter | `/home/user/mod-loot-filter` |
-| `mod-endless-storage` | Unendliches Lager pro Charakter | `/home/user/mod-endless-storage` |
-| `mod-auto-loot` | Automatisches Looten | `/home/user/mod-auto-loot` |
-| `mod-ale` | (siehe Repo-CLAUDE.md) | `/home/user/mod-ale` |
-| `share-public` | **Dieses Repo** — Doku, DBCs, DB-Extrakte, AIO, Python-Tools | `/home/user/share-public` |
+| `azerothcore-wotlk` | Server core (C++17, CMake, MySQL) | `/home/user/azerothcore-wotlk` |
+| `mod-paragon` | Account-wide Paragon level + stat points | `/home/user/mod-paragon` |
+| `mod-paragon-itemgen` | 5-slot bonus enchantments on items | `/home/user/mod-paragon-itemgen` |
+| `mod-loot-filter` | Character-specific loot filter | `/home/user/mod-loot-filter` |
+| `mod-endless-storage` | Unlimited storage per character | `/home/user/mod-endless-storage` |
+| `mod-auto-loot` | Automatic looting | `/home/user/mod-auto-loot` |
+| `mod-ale` | (see repo CLAUDE.md) | `/home/user/mod-ale` |
+| `share-public` | **This repo** — docs, DBCs, DB extracts, AIO, Python tools | `/home/user/share-public` |
 
-Jedes Modul-Repo hat eine eigene kurze `CLAUDE.md` mit Modul-spezifischen Details.
+Every module repo has its own short `CLAUDE.md` with module-specific details.
 
-## Build (Schnellreferenz)
+## Build (quick reference)
 
 ```bash
 mkdir -p build && cd build
@@ -47,14 +47,14 @@ make -j$(nproc)
 make install
 ```
 
-Module werden automatisch erkannt, wenn sie in `azerothcore-wotlk/modules/` liegen (Symlink oder Clone). Details: [docs/02-architecture.md](./docs/02-architecture.md).
+Modules are detected automatically when placed in `azerothcore-wotlk/modules/` (symlink or clone). Details: [docs/02-architecture.md](./docs/02-architecture.md).
 
-## Konventionen (Pflicht)
+## Conventions (mandatory)
 
-- **Branch**: `claude/<beschreibung>-<sessionId>` pro Repo
-- **Logging**: jede Änderung → `claude_log.md` (Zeitstempel ISO 8601, Repo, Beschreibung, Dateien, Commit-Hash)
-- **Pläne**: ebenfalls in `claude_log.md` unter separater Sektion
+- **Branch**: `claude/<description>-<sessionId>` per repo
+- **Logging**: every change → `claude_log.md` (ISO 8601 timestamp, repo, description, files, commit hash)
+- **Plans**: also in `claude_log.md` under a separate section
 - **Commits**: Conventional Commits (`feat(Core/Spells): ...`, `fix(DB/SAI): ...`, `docs: ...`)
-- **Sprache**: Logs in Deutsch, Code-Kommentare Englisch
+- **Language**: logs in English, code comments in English
 
-Vollständige AI-Workflow-Regeln: [docs/08-ai-workflow.md](./docs/08-ai-workflow.md).
+Full AI workflow rules: [docs/08-ai-workflow.md](./docs/08-ai-workflow.md).
