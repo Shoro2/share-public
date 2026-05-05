@@ -1,11 +1,11 @@
-# Session-Handoff 2026-05-01 → Folge-Session
+# Session handoff 2026-05-01 → next session
 
-> Dieses Dokument bringt eine **neue KI-Session** in <5 Minuten auf den Stand der vorherigen Session.
-> Lies das, dann `claude_log_2026-05-01_phase_b.md`, dann pro betroffenem Repo `todo.md`.
+> This document brings a **new AI session** up to speed in <5 minutes from the previous session.
+> Read this, then `claude_log_2026-05-01_phase_b.md`, then `todo.md` per affected repo.
 
-## Was in der vorherigen Session passiert ist (Quick-Recap)
+## What happened in the previous session (quick recap)
 
-**Doku-Restrukturierung (Phase A + B)** — abgeschlossen, in 7 PRs gemerged/offen:
+**Doc restructuring (phases A + B)** — completed, in 7 PRs merged/open:
 
 | PR | Repo |
 |----|------|
@@ -17,41 +17,41 @@
 | #3 | mod-auto-loot |
 | #18 | azerothcore-wotlk |
 
-**Konvention etabliert** (siehe `docs/08-ai-workflow.md`): jedes Modul-/Core-Repo hat **`INDEX.md`/`CLAUDE.md`/`data_structure.md`/`functions.md`/`log.md`/`todo.md`**. Cross-Repo-Historie bleibt in `share-public/claude_log.md`.
+**Convention established** (see `docs/08-ai-workflow.md`): every module/core repo has **`INDEX.md`/`CLAUDE.md`/`data_structure.md`/`functions.md`/`log.md`/`todo.md`**. Cross-repo history stays in `share-public/claude_log.md`.
 
-**Theme A (SQL-Injection-Mitigation)** — abgeschlossen:
-- `share-public/AIO_Server/Dep_Validation/validation.lua` als shared Library, exposiert `_G.Validate`.
-- mod-paragon (`Paragon_Server.lua`), mod-loot-filter (`LootFilter_Server.lua`), mod-endless-storage (`endless_storage_server.lua`) konsumieren die Lib.
-- Erledigt M1, M4, M5 (Mittel-Prio).
+**Theme A (SQL injection mitigation)** — completed:
+- `share-public/AIO_Server/Dep_Validation/validation.lua` as a shared library, exposing `_G.Validate`.
+- mod-paragon (`Paragon_Server.lua`), mod-loot-filter (`LootFilter_Server.lua`), mod-endless-storage (`endless_storage_server.lua`) consume the library.
+- Resolves M1, M4, M5 (medium priority).
 
-**Quick-Wins** (alle abgeschlossen):
-- `share-public/python_scripts/validate_dbc.py` — DBC-Pre-Push-Validator (Header / String-Table / Duplikat-IDs).
-- mod-endless-storage M6 (Bulk-Withdraw via Shift/Ctrl-Click).
+**Quick wins** (all completed):
+- `share-public/python_scripts/validate_dbc.py` — DBC pre-push validator (header / string table / duplicate IDs).
+- mod-endless-storage M6 (bulk withdraw via Shift/Ctrl-click).
 
-**Theme C/D entfernt**: AH-Hook-TODO + Anti-Farm/Reset-Cooldown — User-Entscheidung "won't fix".
+**Themes C/D removed**: AH hook TODO + anti-farm/reset cooldown — user decision "won't fix".
 
-## M2 (Race-Condition C++↔Lua in mod-paragon) — IN ARBEIT, nicht gepushed
+## M2 (C++↔Lua race condition in mod-paragon) — IN PROGRESS, not pushed
 
-User-Entscheidung 2026-05-01: Race ist **beobachtet** (nicht theoretisch), Lösungsweg: Option (a) "Lua-Allokationen an C++ delegieren". Constraint: voller `Player:ParagonAllocate`-Binding würde mod-eluna-Fork erfordern (nicht in Authorization). User hat zugestimmt zur **option-a-äquivalenten Praxis-Variante**.
+User decision 2026-05-01: race is **observed** (not theoretical), resolution: option (a) "delegate Lua allocations to C++". Constraint: a full `Player:ParagonAllocate` binding would require a mod-eluna fork (not in authorization). User agreed to the **option-a-equivalent practical variant**.
 
-### Wurzelursache (verifiziert durch Code-Lesen)
+### Root cause (verified by code reading)
 
 ```
-Player allociert in Lua → 2 separate async UPDATE-Statements (Stat + Unspent)
-  ⏱ DB-Queue hat noch beide nicht committet
-Player wechselt Map → C++ ApplyParagonStatEffects() liest DB
-  → totalAllocated + unspent ≠ level*PPL  (wegen pending writes)
-  → Integrity-Check feuert → DESTRUCTIVE RESET (Stats werden zerstört)
+Player allocates in Lua → 2 separate async UPDATE statements (stat + unspent)
+  ⏱ DB queue has neither committed yet
+Player changes map → C++ ApplyParagonStatEffects() reads from DB
+  → totalAllocated + unspent ≠ level*PPL  (because of pending writes)
+  → integrity check fires → DESTRUCTIVE RESET (stats are destroyed)
   → "There was an error loading your Paragon points..."
 ```
 
-### Konkreter Patch-Plan (3 Files, ready to apply)
+### Concrete patch plan (3 files, ready to apply)
 
-1. **`mod-paragon/Paragon_System_LUA/Paragon_Data.lua`** — neue Funktion:
+1. **`mod-paragon/Paragon_System_LUA/Paragon_Data.lua`** — new function:
 
    ```lua
-   --- Atomic update: Stat-Allocation + unspent_points in einem einzigen UPDATE.
-   -- Synchron via CharDBQuery → C++ map-change-Reads sehen sofort den neuen Stand.
+   --- Atomic update: stat allocation + unspent_points in a single UPDATE.
+   -- Synchronous via CharDBQuery → C++ map-change reads see the new state immediately.
    function Paragon.UpdateAllocationAndUnspent(characterID, dbColumn, newValue, newUnspent)
        CharDBQuery("UPDATE character_paragon_points SET "
            .. dbColumn .. " = " .. newValue
@@ -60,27 +60,27 @@ Player wechselt Map → C++ ApplyParagonStatEffects() liest DB
    end
    ```
 
-   Alte `UpdateAllocation` und `UpdateUnspentPoints` lassen (Backwards-Compat für andere Caller, falls existent).
+   Keep the old `UpdateAllocation` and `UpdateUnspentPoints` (backwards compatibility for other callers, if any).
 
-2. **`mod-paragon/Paragon_System_LUA/Paragon_Server.lua`** — `AllocatePoint` und `DeallocatePoint` umstellen:
+2. **`mod-paragon/Paragon_System_LUA/Paragon_Server.lua`** — switch `AllocatePoint` and `DeallocatePoint`:
 
    ```lua
-   -- vorher (zwei getrennte async UPDATEs):
+   -- before (two separate async UPDATEs):
    Paragon.UpdateAllocation(characterID, stat.dbColumn, newValue)
    Paragon.UpdateUnspentPoints(characterID, newUnspent)
-   -- nachher:
+   -- after:
    Paragon.UpdateAllocationAndUnspent(characterID, stat.dbColumn, newValue, newUnspent)
    ```
 
-3. **`mod-paragon/src/ParagonPlayer.cpp`** — In `ApplyParagonStatEffects()` den destructiven Reset durch Soft-Recovery ersetzen:
+3. **`mod-paragon/src/ParagonPlayer.cpp`** — in `ApplyParagonStatEffects()`, replace the destructive reset with a soft recovery:
 
    ```cpp
    if ((totalAllocated + unspentPoints) != paragonLevel * conf_PPL)
    {
-       // Soft-Recovery (vorher: destructive RESET aller Stats + unspent).
-       // Lua schreibt jetzt atomar+sync, also sollte dieser Branch im Normalbetrieb
-       // nie feuern. Defensiv: nur den unspent korrigieren, Stats unangetastet lassen,
-       // damit ein evtl. transienter Mismatch keine Allokationen vernichtet.
+       // Soft recovery (previously: destructive RESET of all stats + unspent).
+       // Lua now writes atomically + synchronously, so this branch should not fire
+       // in normal operation. Defensively: only correct unspent, leave stats untouched
+       // so a possibly transient mismatch does not destroy allocations.
        uint32 totalPoints = paragonLevel * conf_PPL;
        int64 expectedUnspent = static_cast<int64>(totalPoints) - static_cast<int64>(totalAllocated);
        if (expectedUnspent < 0) expectedUnspent = 0;
@@ -99,58 +99,58 @@ Player wechselt Map → C++ ApplyParagonStatEffects() liest DB
            setStmt->SetData(1, characterID);
            CharacterDatabase.Execute(setStmt);
        }
-       // KEIN early return mehr — auch bei mismatch: Auras applien.
+       // No early return anymore — even on mismatch: apply auras.
    }
 
    RefreshParagonAura(player, statValues);
    ```
 
-   Die destruktive Reset-Logik (alle Stats auf 0) bleibt **nur** im NPC-Reset-Pfad (`ParagonNPC.cpp` → `ResetParagonPoints`).
+   The destructive reset logic (all stats to 0) stays **only** in the NPC reset path (`ParagonNPC.cpp` → `ResetParagonPoints`).
 
-### Cleanup nach Implementation
+### Cleanup after implementation
 
-- `mod-paragon/todo.md`: Item M2 ("Race-Condition C++↔Lua") entfernen.
-- `mod-paragon/log.md`: Eintrag analog zu M1, mit Verweis auf den finalen Commit.
+- `mod-paragon/todo.md`: remove item M2 ("C++↔Lua race condition").
+- `mod-paragon/log.md`: entry analogous to M1 with reference to the final commit.
 
-### Validierung (manuell durch User in-game)
+### Validation (manual by the user in-game)
 
-- Vorher: Punkt allokieren → Map-Change innerhalb 100ms → Reset-Message kam, Punkte weg.
-- Nachher: gleicher Vorgang → Punkt bleibt allokiert, kein Reset.
+- Before: allocate a point → map change within 100ms → reset message appeared, points gone.
+- After: same flow → point stays allocated, no reset.
 
-## Neue Information für die Folge-Session: `mod-ale`
+## New information for the next session: `mod-ale`
 
-User wird ein zusätzliches Repo `shoro2/mod-ale` zur GitHub-App-Authorization hinzufügen. Die Folge-Session sollte:
+The user will add an additional repo `shoro2/mod-ale` to the GitHub app authorization. The next session should:
 
-1. **Dieses Repo erkunden** (`mcp__github__get_file_contents` auf `/`) und einordnen, was es ist.
-2. **Die Per-Repo-Doku-Konvention darauf anwenden** (siehe `share-public/docs/08-ai-workflow.md`):
-   - `INDEX.md`, `CLAUDE.md`, `data_structure.md`, `functions.md`, `log.md`, `todo.md` anlegen.
-   - Branch: `claude/<beschreibung>-<sessionId>`.
-3. Falls `mod-ale` Lua/AIO-Code enthält und `CharDBExecute`/`CharDBQuery` nutzt, **die Validation-Lib einbauen** wie bei mod-paragon/loot-filter/endless-storage (siehe Theme-A-Pattern).
-4. Falls `mod-ale` in einem der bestehenden Modul-`functions.md` als Konsument/Abhängigkeit referenziert werden sollte, ergänzen.
+1. **Explore the repo** (`mcp__github__get_file_contents` on `/`) and classify what it is.
+2. **Apply the per-repo doc convention** (see `share-public/docs/08-ai-workflow.md`):
+   - create `INDEX.md`, `CLAUDE.md`, `data_structure.md`, `functions.md`, `log.md`, `todo.md`.
+   - Branch: `claude/<description>-<sessionId>`.
+3. If `mod-ale` contains Lua/AIO code and uses `CharDBExecute`/`CharDBQuery`, **integrate the validation lib** like in mod-paragon/loot-filter/endless-storage (see the Theme A pattern).
+4. If `mod-ale` should be referenced as a consumer/dependency in one of the existing module `functions.md` files, add it.
 
-## Niedrig-Prio TODOs (siehe pro Repo `todo.md`)
+## Low priority TODOs (see per-repo `todo.md`)
 
-Quick-Übersicht der noch offenen Items:
+Quick overview of the still-open items:
 
-| Repo | Niedrig-Prio Items (Auszug) |
+| Repo | Low priority items (excerpt) |
 |------|------------------------------|
-| mod-paragon | nach M2-Fix evtl. **`ParagonPlayer.cpp`-Split** (war ~26 KB → über Lese-Limit, in `todo.md` notiert) |
-| mod-paragon-itemgen | M7 (BasePoints-Off-By-One Audit, **mittel-prio**), In-Memory-Cache, SQL→Generator-Skript |
-| mod-loot-filter | Bulk-Import/Export, Server-Default-Regeln, Per-Quality-DE-Bonus |
-| mod-endless-storage | server-getriebenes Tab-Layout, Crafting-Fallback via Server-Hook |
-| mod-auto-loot | Mining/Herbalism/Skinning, Throttle-Cooldown |
-| azerothcore-wotlk | nur Upstream-Sync-Hygiene + ein Hook-Markierungs-Item |
+| mod-paragon | after the M2 fix, possibly **`ParagonPlayer.cpp` split** (was ~26 KB → over the read limit, noted in `todo.md`) |
+| mod-paragon-itemgen | M7 (BasePoints off-by-one audit, **medium priority**), in-memory cache, SQL→generator script |
+| mod-loot-filter | bulk import/export, server default rules, per-quality DE bonus |
+| mod-endless-storage | server-driven tab layout, crafting fallback via server hook |
+| mod-auto-loot | mining/herbalism/skinning, throttle cooldown |
+| azerothcore-wotlk | only upstream sync hygiene + a hook marking item |
 
-## Branch-Status (Stand 2026-05-01 ~16:40 UTC)
+## Branch status (as of 2026-05-01 ~16:40 UTC)
 
-Alle Repos auf Branch `claude/review-markdown-docs-bTSgu`. Falls die Folge-Session einen frischen Branch will: vom jeweiligen Default-Branch (`main` / `master`) ausgehen, **nicht** von diesem Branch (er ist Doku-fokussiert und sollte nicht mit Code-Änderungen weiter beladen werden).
+All repos on branch `claude/review-markdown-docs-bTSgu`. If the next session wants a fresh branch: start from the respective default branch (`main` / `master`), **not** from this branch (it is doc-focused and shouldn't be loaded with further code changes).
 
-**Empfehlung für Folge-Session**: Vor M2-Implementation die offenen PRs (#16, #26, #40, #17, #3, #18, #31) mergen lassen, dann frischen Branch `claude/m2-paragon-race-fix-<id>` für die 3 Patches.
+**Recommendation for the next session**: have the open PRs (#16, #26, #40, #17, #3, #18, #31) merged first before the M2 implementation, then a fresh branch `claude/m2-paragon-race-fix-<id>` for the 3 patches.
 
-## Was DEFINITIV NICHT in der Folge-Session passieren sollte
+## What should DEFINITELY NOT happen in the next session
 
-- **Kein** Build (`make -j`).
-- **Kein** PR-Merge ohne expliziten User-Wunsch.
-- **Kein** Force-Push, kein Reset --hard.
-- **Keine** Edits an `share-public/CLAUDE.md` (alte 60-KB-Doku) — die ist Tiefenreferenz, nicht das aktive Doku-Set.
-- **Keine** Touch an die existierenden Phase-A/B-PRs (separate, fertig konzipierte Doku-Restrukturierung).
+- **No** build (`make -j`).
+- **No** PR merge without explicit user request.
+- **No** force push, no `git reset --hard`.
+- **No** edits to `share-public/CLAUDE.md` (the legacy 60 KB doc) — it is the deep reference, not the active doc set.
+- **No** touch on the existing phase A/B PRs (separate, finalized doc restructuring).

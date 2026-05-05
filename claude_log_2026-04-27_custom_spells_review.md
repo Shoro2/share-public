@@ -1,132 +1,132 @@
 # Custom Spells Review (2026-04-27)
 
-> Dies ist ein dedizierter Log-Eintrag für die mod-custom-spells Review-Session.
-> Verlinkt aus `claude_log.md`. Die Hauptergebnisse sollten in `claude_log.md` zusammengefasst werden.
+> This is a dedicated log entry for the mod-custom-spells review session.
+> Linked from `claude_log.md`. The main results should be summarized in `claude_log.md`.
 
-## [mod-custom-spells] Review + ProcFlags-Fix + SQL-Restrukturierung
+## [mod-custom-spells] Review + ProcFlags fix + SQL restructuring
 
-- **Zeitstempel**: 2026-04-27
+- **Timestamp**: 2026-04-27
 - **Repo**: mod-custom-spells, share-public
 - **Branch**: `claude/fix-custom-spells-mod-IpN2G`
 
-### Hintergrund
+### Background
 
-Vollständige Review aller drei `CLAUDE.md`-Dateien (azerothcore-wotlk, mod-custom-spells, share-public) sowie der gesamten mod-custom-spells Codebasis (1150 Zeilen SQL, 11 C++ Source-Dateien mit ~280 Custom-Spell-IDs, 70+ Mechaniken).
+Full review of all three `CLAUDE.md` files (azerothcore-wotlk, mod-custom-spells, share-public) plus the entire mod-custom-spells codebase (1150 SQL lines, 11 C++ source files with ~280 custom spell IDs, 70+ mechanics).
 
-### Hauptbefunde
+### Main findings
 
-#### A. KRITISCH — Falsche ProcFlag-Werte in Doku + SQL
+#### A. CRITICAL — wrong ProcFlag values in docs + SQL
 
-Die `ProcFlags`-Tabelle in `mod-custom-spells/CLAUDE.md` hatte falsche Werte. Verifiziert gegen `azerothcore-wotlk/src/server/game/Spells/SpellMgr.h`:
+The `ProcFlags` table in `mod-custom-spells/CLAUDE.md` had wrong values. Verified against `azerothcore-wotlk/src/server/game/Spells/SpellMgr.h`:
 
-| Flag | War | Korrekt |
+| Flag | Was | Correct |
 |------|-----|---------|
 | `PROC_FLAG_TAKEN_MELEE_AUTO_ATTACK` | `0x2` ❌ | `0x8` ✓ |
 | `PROC_FLAG_DONE_PERIODIC` | `0x400000` ❌ | `0x40000` ✓ |
 | `PROC_FLAG_KILL` | `0x1` ❌ | `0x2` ✓ |
 | `PROC_FLAG_TAKEN_DAMAGE` | `0x4000` ❌ | `0x100000` ✓ |
 
-**9 spell_proc-Einträge betroffen und korrigiert**:
+**9 spell_proc entries affected and corrected**:
 - 900172 Block→AoE: `0x2` → `0x8`
 - 900173 Block→Enhanced TC: `0x2` → `0x8`
 - 900366 DK Unholy DoT-AoE: `0x400000` → `0x40000`
 - 900405 Shaman FS-Reset-LvB: `0x400000` → `0x40000`
-- 900566 Hunter Trap-Proc: `0x44` → `0x140`
+- 900566 Hunter Trap proc: `0x44` → `0x140`
 - 900933 Priest Heal→Holy-Fire: `0x10000` → `0x4000`
 - 901066 Druid HoT→Treant: `0x400000` → `0x40000`
 - 901101 Global Kill→Heal: `0x1` → `0x2`
 - 901104 Global Counter-Attack: `0x2` → `0x8`
 
-#### B. KRITISCH — `SPELLMOD_JUMP_TARGETS` für Single-Target-Spells
+#### B. CRITICAL — `SPELLMOD_JUMP_TARGETS` for single-target spells
 
-Das ursprüngliche Konzept "+9 targets via DBC SPELLMOD_JUMP_TARGETS" funktioniert **nur** für echte Chain-/Bounce-Spells (Avenger's Shield, Chain Lightning, Multi-Shot). Für Single-Target-Spells (CS, HS, SS, Hemo, Frostbolt, Ice Lance, AB, ABarr, FB, Pyro, MF, SF, SB, CB) bewirken diese DBC-Einträge **nichts**.
+The original concept "+9 targets via DBC SPELLMOD_JUMP_TARGETS" only works for true chain/bounce spells (Avenger's Shield, Chain Lightning, Multi-Shot). For single-target spells (CS, HS, SS, Hemo, Frostbolt, Ice Lance, AB, ABarr, FB, Pyro, MF, SF, SB, CB), these DBC entries do **nothing**.
 
-Die zugehörigen C++ AfterHit-Klassen (`spell_custom_dkb_hs_aoe`, `spell_custom_ret_cs_aoe`, etc.) wurden aus `spell_script_names` entfernt → Dead Code.
+The associated C++ AfterHit classes (`spell_custom_dkb_hs_aoe`, `spell_custom_ret_cs_aoe`, etc.) were removed from `spell_script_names` → dead code.
 
-**Lösungsweg (für später, nicht in dieser Session umgesetzt)**: Reaktivierung der C++ AfterHit-Klassen via `spell_script_names` Eintrag pro betroffenem Spell.
+**Resolution path (for later, not implemented in this session)**: re-enable the C++ AfterHit classes via a `spell_script_names` entry per affected spell.
 
-#### C. HOCH — Cell::VisitObjects Inkonsistenz
+#### C. HIGH — Cell::VisitObjects inconsistency
 
-In Mage/Warlock/Hunter/Priest C++ Klassen wird `Cell::VisitObjects(target,…)` mit `AnyUnfriendlyUnitInObjectRangeCheck(caster, caster, 10.0f)` kombiniert. Inkonsistent zwischen Center und Range-Check → Treffer-Suche kann fehlschlagen.
+In Mage/Warlock/Hunter/Priest C++ classes, `Cell::VisitObjects(target,…)` is combined with `AnyUnfriendlyUnitInObjectRangeCheck(caster, caster, 10.0f)`. Inconsistent between center and range check → hit search can fail.
 
-#### D. HOCH — Multi-Shot AfterHit ohne Deduplizierung
+#### D. HIGH — Multi-Shot AfterHit without dedup
 
-`spell_custom_hunt_multishot_aoe` und `spell_custom_hunt_autoshot_bounce` haben kein `_done`-Flag. Bei Multi-Shot (3 Ziele) feuert der AoE-Block 3× → Triple-Damage.
+`spell_custom_hunt_multishot_aoe` and `spell_custom_hunt_autoshot_bounce` lack a `_done` flag. With Multi-Shot (3 targets) the AoE block fires 3× → triple damage.
 
-#### E. HOCH — Marker-Aura Apply-Mechanismus fehlt
+#### E. HIGH — marker-aura apply mechanism missing
 
-Alle 70+ Custom-Marker-Auras (900168-901108) sind Passives. Es gibt **keinen** Mechanismus im Modul, um sie automatisch auf Spieler anzuwenden. Ohne Integration mit dem Paragon-System funktioniert in-game keine der Custom-Mechaniken.
+All 70+ custom marker auras (900168-901108) are passives. There is **no** mechanism in the module to apply them to players automatically. Without integration with the Paragon system none of the custom mechanics work in-game.
 
-### In dieser Session umgesetzt
+### Implemented in this session
 
-#### Code-Änderungen (mod-custom-spells)
+#### Code changes (mod-custom-spells)
 
-1. **ProcFlags in spell_proc korrigiert** (9 Einträge — siehe Liste oben)
-2. **SQL-Restrukturierung**: Die ursprüngliche `mod_custom_spells.sql` (89KB) wurde aufgeteilt in 6 thematische Dateien:
+1. **ProcFlags in spell_proc corrected** (9 entries — see list above)
+2. **SQL restructuring**: the original `mod_custom_spells.sql` (89KB) was split into 6 thematic files:
    - `mod_custom_spells.sql` — spell_script_names (3.6KB)
    - `mod_custom_spells_b_warrior_paladin.sql` — Warrior + Paladin (8.3KB)
    - `mod_custom_spells_c_dk_shaman.sql` — DK + Shaman + Frost Wyrm + Spirit Wolf NPCs (10.4KB)
    - `mod_custom_spells_d_hunter_druid_rogue.sql` — Hunter + Druid + Rogue + Treant NPC (11.0KB)
    - `mod_custom_spells_e_mage.sql` — Mage Arcane/Fire/Frost (6.3KB)
    - `mod_custom_spells_f_warlock_priest_global.sql` — Warlock + Priest + Global + Lesser Demons NPCs (12.9KB)
-3. **Neue Doku**: `PROCFLAGS_REFERENCE.md` mit korrigierter ProcFlags-Tabelle (Bezug auf SpellMgr.h)
+3. **New doc**: `PROCFLAGS_REFERENCE.md` with the corrected ProcFlags table (referencing SpellMgr.h)
 
-#### Bekannter Stolperstein in dieser Session
+#### Known stumbling block in this session
 
-Beim ersten Push wurde fälschlich der Placeholder-String `PLACEHOLDER_USE_BASH` als SQL-Inhalt gespeichert (Tool-Aufruf-Fehler). Wiederherstellung erfolgte durch oben genannte SQL-Restrukturierung.
+On the first push the placeholder string `PLACEHOLDER_USE_BASH` was mistakenly stored as SQL content (tool-call error). Recovery happened through the SQL restructuring above.
 
-#### Hinweis zu CLAUDE.md (mod-custom-spells)
+#### Note on CLAUDE.md (mod-custom-spells)
 
-Die ProcFlags-Tabelle in `mod-custom-spells/CLAUDE.md` enthält **immer noch die falschen Werte**. Sie wurde in dieser Session nicht überschrieben (Größenrisiko). Stattdessen wurde `PROCFLAGS_REFERENCE.md` als kanonische Referenz hinzugefügt. CLAUDE.md sollte in einer Folge-Session manuell aktualisiert werden.
+The ProcFlags table in `mod-custom-spells/CLAUDE.md` **still contains the wrong values**. It was not overwritten in this session (size risk). Instead `PROCFLAGS_REFERENCE.md` was added as the canonical reference. CLAUDE.md should be manually updated in a follow-up session.
 
-### Offene TODOs (aus dem Review, NICHT in dieser Session umgesetzt)
+### Open TODOs (from the review, NOT implemented in this session)
 
-#### Hohe Priorität
+#### High priority
 
-- [ ] **mod-custom-spells: SPELLMOD_JUMP_TARGETS für Single-Target-Spells**: Reaktivierung der C++ AfterHit-Klassen via `spell_script_names` für 14 Spells (CS, HS, SS, Hemo, Frostbolt, Ice Lance, AB, ABarr, FB, Pyro, MF, SF, SB, CB).
-- [ ] **mod-custom-spells: CLAUDE.md ProcFlags-Tabelle aktualisieren** (siehe `PROCFLAGS_REFERENCE.md`).
-- [ ] **mod-custom-spells: Marker-Aura Apply-Mechanismus**: Integration mit `paragon_passive_spell_pool` oder GM-Test-Befehl klären — sonst funktionieren die Spells im Spiel nicht.
-- [ ] **mod-custom-spells: Multi-Shot AfterHit Deduplizierung**: `_done`-Flag in `spell_custom_hunt_multishot_aoe` und `spell_custom_hunt_autoshot_bounce` ergänzen.
+- [ ] **mod-custom-spells: SPELLMOD_JUMP_TARGETS for single-target spells**: re-enable the C++ AfterHit classes via `spell_script_names` for 14 spells (CS, HS, SS, Hemo, Frostbolt, Ice Lance, AB, ABarr, FB, Pyro, MF, SF, SB, CB).
+- [ ] **mod-custom-spells: update the ProcFlags table in CLAUDE.md** (see `PROCFLAGS_REFERENCE.md`).
+- [ ] **mod-custom-spells: marker-aura apply mechanism**: clarify integration with `paragon_passive_spell_pool` or a GM test command — otherwise the spells do not work in-game.
+- [ ] **mod-custom-spells: Multi-Shot AfterHit dedup**: add a `_done` flag in `spell_custom_hunt_multishot_aoe` and `spell_custom_hunt_autoshot_bounce`.
 
-#### Mittlere Priorität
+#### Medium priority
 
-- [ ] **mod-custom-spells: Cell::VisitObjects-Inkonsistenz**: In Mage/Warlock/Hunter/Priest entweder Origin und Range-Check beide auf `caster` ODER beide auf `target` setzen.
-- [ ] **mod-custom-spells: Off-by-One BasePoints**: Spell.dbc speichert `EffectBasePoints = real_value - 1`. Werte in spell_dbc-Inserts haben `BasePoints=50` für "+50%" gemeint, ergeben aber +51% in-game. Systematisch korrigieren ODER dokumentieren.
-- [ ] **mod-custom-spells: SpellFamilyFlags der Ziel-Spells verifizieren** (siehe "verify!" Kommentare im SQL).
-- [ ] **mod-custom-spells: Bladestorm-Konstante**: `mod-custom-spells/CLAUDE.md` sagt CD-Reduce auf 46927, code definiert 46924. 46924 ist korrekt — Doku anpassen.
+- [ ] **mod-custom-spells: Cell::VisitObjects inconsistency**: in Mage/Warlock/Hunter/Priest set both origin and range check to either `caster` OR both to `target`.
+- [ ] **mod-custom-spells: off-by-one BasePoints**: Spell.dbc stores `EffectBasePoints = real_value - 1`. Values in spell_dbc inserts with `BasePoints=50` were meant for "+50%" but yield +51% in-game. Systematically correct OR document.
+- [ ] **mod-custom-spells: verify SpellFamilyFlags of target spells** (see "verify!" comments in the SQL).
+- [ ] **mod-custom-spells: Bladestorm constant**: `mod-custom-spells/CLAUDE.md` says CD reduce on 46927; the code defines 46924. 46924 is correct — fix the docs.
 
-#### Niedrige Priorität
+#### Low priority
 
-- [ ] **mod-custom-spells: Tote `RegisterSpellScript`-Aufrufe entfernen** für nicht mehr gebundene AoE-Klassen oder Hooks reaktivieren.
-- [ ] **mod-custom-spells: Client-DBC-Patches** für 900713, 900771, 900534, 900275, 900368 prüfen — ohne diese sehen Spieler keine Tooltips.
+- [ ] **mod-custom-spells: remove dead `RegisterSpellScript` calls** for AoE classes that are no longer wired up, or re-enable hooks.
+- [ ] **mod-custom-spells: client DBC patches** for 900713, 900771, 900534, 900275, 900368 — without these, players don't see tooltips.
 
-### Empfohlener Test (sobald Projektzugriff verfügbar)
+### Recommended test (once project access is available)
 
 ```
-.aura 900168     # Revenge +50% Marker als GM aufspielen
-.aura 900169     # Revenge AoE Marker
-# Revenge spammen → worldserver.log auf "mod-custom-spells: Player … Revenge AoE …" prüfen
+.aura 900168     # apply Revenge +50% marker as GM
+.aura 900169     # Revenge AoE marker
+# spam Revenge → check worldserver.log for "mod-custom-spells: Player … Revenge AoE …"
 ```
 
-Wenn die Log-Zeilen nicht erscheinen → Marker-Auras werden nicht angewendet (TODO #3 oben).
-Wenn sie erscheinen, aber in-game nichts passiert → Helper-Spell oder DBC-Effekt prüfen.
+If the log lines do not appear → marker auras are not applied (TODO #3 above).
+If they appear but nothing happens in-game → check the helper spell or DBC effect.
 
-### Betroffene Dateien
+### Affected files
 
 **mod-custom-spells**:
-- `data/sql/db-world/mod_custom_spells.sql` (rebuilt mit spell_script_names)
-- `data/sql/db-world/mod_custom_spells_b_warrior_paladin.sql` (neu)
-- `data/sql/db-world/mod_custom_spells_c_dk_shaman.sql` (neu)
-- `data/sql/db-world/mod_custom_spells_d_hunter_druid_rogue.sql` (neu)
-- `data/sql/db-world/mod_custom_spells_e_mage.sql` (neu)
-- `data/sql/db-world/mod_custom_spells_f_warlock_priest_global.sql` (neu)
-- `PROCFLAGS_REFERENCE.md` (neu)
+- `data/sql/db-world/mod_custom_spells.sql` (rebuilt with spell_script_names)
+- `data/sql/db-world/mod_custom_spells_b_warrior_paladin.sql` (new)
+- `data/sql/db-world/mod_custom_spells_c_dk_shaman.sql` (new)
+- `data/sql/db-world/mod_custom_spells_d_hunter_druid_rogue.sql` (new)
+- `data/sql/db-world/mod_custom_spells_e_mage.sql` (new)
+- `data/sql/db-world/mod_custom_spells_f_warlock_priest_global.sql` (new)
+- `PROCFLAGS_REFERENCE.md` (new)
 
 **share-public**:
-- `claude_log_2026-04-27_custom_spells_review.md` (diese Datei, neu)
-- `claude_log.md` (sollte um Verweis auf diese Datei ergänzt werden)
+- `claude_log_2026-04-27_custom_spells_review.md` (this file, new)
+- `claude_log.md` (should be extended with a reference to this file)
 
-### Commits auf Branch `claude/fix-custom-spells-mod-IpN2G`
+### Commits on branch `claude/fix-custom-spells-mod-IpN2G`
 
 1. `7f4a1a3` — fix(SQL): restore mod_custom_spells.sql with spell_script_names (part 1/4)
 2. `4f2cd49` — fix(SQL): add warrior prot + paladin (part 2/4)
