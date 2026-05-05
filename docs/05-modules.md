@@ -1,45 +1,45 @@
-# 05 — Module im Detail
+# 05 — Modules in detail
 
-Tiefere technische Übersicht jedes Custom-Moduls. Für eine Repo-Karte siehe [01-repos.md](./01-repos.md).
+Deeper technical overview of each custom module. For a repo map see [01-repos.md](./01-repos.md).
 
 ---
 
 ## mod-paragon
 
-**Loader-Funktion**: `Addmod_paragonScripts()` in `src/Paragon_loader.cpp`.
+**Loader function**: `Addmod_paragonScripts()` in `src/Paragon_loader.cpp`.
 
-### Kernmechanik
+### Core mechanic
 
-- **Account-weit**: Level + XP geteilt über alle Charaktere des Accounts.
-- **Per-Character**: Stat-Verteilung (`unspent_points` + 17 Stat-Spalten).
-- **XP-Quellen** (Tabelle):
+- **Account-wide**: level + XP shared across all characters of the account.
+- **Per character**: stat distribution (`unspent_points` + 17 stat columns).
+- **XP sources** (table):
 
-| Encounter-Typ | XP |
+| Encounter type | XP |
 |---------------|----|
-| Regular Elite | 1 |
-| Dungeon Elite | 1 |
-| Heroic Dungeon Elite | 2 |
-| Dungeon Boss | 3 |
-| Heroic Dungeon Boss | 5 |
-| Raid Boss | 10 |
-| World Boss | 20 |
-| Daily/Weekly Quest | 3 |
+| Regular elite | 1 |
+| Dungeon elite | 1 |
+| Heroic dungeon elite | 2 |
+| Dungeon boss | 3 |
+| Heroic dungeon boss | 5 |
+| Raid boss | 10 |
+| World boss | 20 |
+| Daily/weekly quest | 3 |
 
-Group-Kills geben XP an alle Group-Members auf derselben Map.
+Group kills give XP to all group members on the same map.
 
-- **Level-Formel**: `100 * 1.1^(level-1)` XP, zählt **herunter** zu 0.
-- **5 Stat-Punkte pro Level-Up**, gespeichert als `unspent_points` in DB (kein Item).
+- **Level formula**: `100 * 1.1^(level-1)` XP, counts **down** to 0.
+- **5 stat points per level-up**, stored as `unspent_points` in DB (no item).
 
-### Zwei parallele Allokationspfade (auf gleicher DB-Tabelle)
+### Two parallel allocation paths (on the same DB table)
 
-1. **C++ Aura-System** (`ParagonPlayer.cpp`): bei Login/MapChange Stats aus DB lesen, als unsichtbare Stack-Auras anwenden. Cache: `std::unordered_map<uint32, ParagonCache>` mit Mutex.
-2. **Lua AIO-UI** (`Paragon_System_LUA/`): Frame mit Tabs (Primary/Offensive/Defensive/Utility), +/- Buttons (Shift+Click = 10), Reset-Button.
+1. **C++ aura system** (`ParagonPlayer.cpp`): on login/MapChange, read stats from DB and apply as invisible stack auras. Cache: `std::unordered_map<uint32, ParagonCache>` with mutex.
+2. **Lua AIO UI** (`Paragon_System_LUA/`): frame with tabs (Primary/Offensive/Defensive/Utility), +/- buttons (Shift+click = 10), reset button.
 
-### 17 Stats / Aura-IDs
+### 17 stats / aura IDs
 
-| Stat | Aura-ID | DB-Spalte |
+| Stat | Aura ID | DB column |
 |------|---------|-----------|
-| Level-Counter (Stack=Level) | 100000 | (über `character_paragon`) |
+| Level counter (stack=level) | 100000 | (via `character_paragon`) |
 | Strength | 100001 | `pstrength` |
 | Intellect | 100002 | `pintellect` |
 | Agility | 100003 | `pagility` |
@@ -48,121 +48,121 @@ Group-Kills geben XP an alle Group-Members auf derselben Map.
 | Haste, ArmorPen, SpellPower, Crit, MountSpeed, ManaRegen, Hit, Block, Expertise, Parry, Dodge | 100016–100026 | `phaste`…`pdodge` |
 | Life Leech | 100027 | `plifeleech` |
 
-Alle Aura-IDs **konfigurierbar** via `mod_paragon.conf` (`Paragon.IdStr`, …). MaxStats[17] ebenfalls konfigurierbar (Default 255). 0 = unbegrenzt.
+All aura IDs **configurable** via `mod_paragon.conf` (`Paragon.IdStr`, …). MaxStats[17] is also configurable (default 255). 0 = unlimited.
 
-### Big+Small-Spell-Paare (Stat > 255)
+### Big+small spell pairs (stat > 255)
 
-Stack-Limit der Auras: 255. Workaround = zwei Spells pro Stat:
-- "Big" (Wert ×100/Stack, IDs 100201–100227)
-- "Small" (Wert ×1/Stack)
+Aura stack limit: 255. Workaround = two spells per stat:
+- "Big" (value ×100/stack, IDs 100201–100227)
+- "Small" (value ×1/stack)
 
-Allokation N: `big = N/100`, `small = N%100`. Beispiel: 666 Str = 6×Big(500) + 66×Small(5) = 3330. Levelaura selbst auf 255 gecapped (= 25.500 Levels).
+Allocation N: `big = N/100`, `small = N%100`. Example: 666 Str = 6×Big(500) + 66×Small(5) = 3330. Level aura itself is capped at 255 (= 25,500 levels).
 
-### Life Leech — Pet-/Totem-Korrekt
+### Life Leech — pet/totem correct
 
-Resolved via `Unit::GetCharmerOrOwnerPlayerOrPlayerItself()` — funktioniert für Pets/Totems/Charms (Demonology Felguard, Frost Mage Water Elemental, BM Hunter, Shaman Totems, DK Dancing Rune Weapon). Selbstschaden-Heal wird über Victim-Owner-Check ausgeschlossen.
+Resolved via `Unit::GetCharmerOrOwnerPlayerOrPlayerItself()` — works for pets/totems/charms (Demonology Felguard, Frost Mage Water Elemental, BM Hunter, Shaman totems, DK Dancing Rune Weapon). Self-damage heal is excluded via the victim-owner check.
 
-### DB-Tabellen (acore_characters)
+### DB tables (acore_characters)
 
-| Tabelle | Spalten |
+| Table | Columns |
 |---------|---------|
 | `character_paragon` | `accountID` PK, `level`, `xp` (counts down) |
-| `character_paragon_points` | `characterID` PK, `unspent_points`, 17 Stat-Spalten |
+| `character_paragon_points` | `characterID` PK, `unspent_points`, 17 stat columns |
 
-### Bekanntes Issue
+### Known issue
 
-- SQL-Injection-Risiko in Lua-DB-Calls (`CharDBExecute` mit String-Concat — Eluna API hat keine Prepared Statements). Werte sollten validiert werden.
+- SQL injection risk in Lua DB calls (`CharDBExecute` with string concatenation — Eluna API has no prepared statements). Values should be validated.
 
 ---
 
 ## mod-paragon-itemgen
 
-**Loader-Funktion**: `Addmod_paragon_itemgenScripts()` in `src/MP_loader.cpp`.
+**Loader function**: `Addmod_paragon_itemgenScripts()` in `src/MP_loader.cpp`.
 
-### 5-Slot Enchantment-System
+### 5-slot enchantment system
 
-Items bekommen Bonus-Stat-Enchantments via `PROP_ENCHANTMENT_SLOT_0..4` (DB-Slots 7–11):
+Items receive bonus stat enchantments via `PROP_ENCHANTMENT_SLOT_0..4` (DB slots 7–11):
 
-| Slot | Inhalt | Quelle |
+| Slot | Contents | Source |
 |------|--------|--------|
-| 7 | Stamina | immer |
-| 8 | Main-Stat (Str/Agi/Int/Spi) | Spielerwahl |
-| 9 | Combat-Rating 1 | Rollen-Pool |
-| 10 | Combat-Rating 2 | Rollen-Pool, kein Duplikat von 9 |
-| 11 | Passive-Spell / "Cursed"-Marker / leer | nur Cursed Items |
+| 7 | Stamina | always |
+| 8 | main stat (Str/Agi/Int/Spi) | player choice |
+| 9 | combat rating 1 | role pool |
+| 10 | combat rating 2 | role pool, no duplicate of 9 |
+| 11 | passive spell / "Cursed" marker / empty | cursed items only |
 
-### Skalierung
+### Scaling
 
-`amount = ceil(paragonLevel × scalingFactor × qualityMultiplier)`, gecapped auf 666. Random-Roll pro Slot von 1 bis amount.
+`amount = ceil(paragonLevel × scalingFactor × qualityMultiplier)`, capped at 666. Random roll per slot from 1 to amount.
 
-### Rollen-Pools
+### Role pools
 
-| Rolle | Pool |
+| Role | Pool |
 |-------|------|
 | Tank (0) | Dodge, Parry, Defense, Block, Hit, Expertise |
 | DPS Melee (Str/Agi main) | Crit, Haste, Hit, ArmorPen, Expertise, AP |
 | DPS Caster (Int/Spi main) | Crit, Haste, Hit, SpellPower, ManaRegen |
 | Healer (2) | Crit, Haste, SpellPower, ManaRegen |
 
-DPS-Pool wählt sich automatisch via `mainStat` (Str/Agi → Melee, Int/Spi → Caster).
+The DPS pool is selected automatically via `mainStat` (Str/Agi → melee, Int/Spi → caster).
 
-### Cursed Items (1% Default)
+### Cursed items (1% default)
 
-- alle Stats × `conf_CursedMultiplier` (Default 1.5), gecapped auf 666
-- Soulbound (`item->SetBinding(true)`)
-- Shadow-Visual (`SendPlaySpellVisual(conf_CursedVisualKit)`, Default 5765)
-- bei Spec → Passive-Spell aus `paragon_passive_spell_pool` (IDs 950001–950099) in Slot 11
-- ohne Spec → "Cursed"-Marker (920001) in Slot 11
-- Normale Items bekommen **keine** Passives.
+- all stats × `conf_CursedMultiplier` (default 1.5), capped at 666
+- soulbound (`item->SetBinding(true)`)
+- shadow visual (`SendPlaySpellVisual(conf_CursedVisualKit)`, default 5765)
+- with spec → passive spell from `paragon_passive_spell_pool` (IDs 950001–950099) into slot 11
+- without spec → "Cursed" marker (920001) in slot 11
+- normal items get **no** passives.
 
-### Tooltip-System (zweischichtig)
+### Tooltip system (two-layered)
 
-1. **AIO-Daten (Primärweg)**: Server liest Slots 7–11 vom Item, decodiert `(slot, enchantmentId)` → `statIndex = (id - 900000) / 1000`, `amount = (id - 900000) % 1000`. Sendet pro Item-Position via AIO an Client. Cache nach Bag/Slot. **Funktioniert ohne Client-DBC-Patch** für Inventar/Equipment.
-2. **DBC-Text-Fallback**: Scant Tooltip auf "Paragon +", "Cursed", "Passive:" — nur greifbar bei vorgepatchter Client-`SpellItemEnchantment.dbc` (`patch_dbc.py`). Greift bei Loot/Quest/Vendor-Tooltips, wo Slot 7–11 nicht direkt am Item-Instance bekannt sind.
+1. **AIO data (primary path)**: server reads slots 7–11 from the item, decodes `(slot, enchantmentId)` → `statIndex = (id - 900000) / 1000`, `amount = (id - 900000) % 1000`. Sends per item position via AIO to the client. Cache by bag/slot. **Works without a client DBC patch** for inventory/equipment.
+2. **DBC text fallback**: scans the tooltip for "Paragon +", "Cursed", "Passive:" — only available with a pre-patched client `SpellItemEnchantment.dbc` (`patch_dbc.py`). Works for loot/quest/vendor tooltips where slots 7–11 are not directly known on the item instance.
 
 ### Hooks
 
-| PlayerScript-Hook | Trigger |
+| PlayerScript hook | Trigger |
 |-------------------|---------|
-| `OnPlayerLootItem` | Mob/Chest-Loot |
-| `OnPlayerCreateItem` | Crafting |
-| `OnPlayerQuestRewardItem` | Quest-Reward |
-| `OnPlayerAfterStoreOrEquipNewItem` | Vendor-Kauf |
-| `OnPlayerCanSetTradeItem` | Trade-Restriction |
-| `OnPlayerCanSendMail` | Mail-Restriction |
+| `OnPlayerLootItem` | mob/chest loot |
+| `OnPlayerCreateItem` | crafting |
+| `OnPlayerQuestRewardItem` | quest reward |
+| `OnPlayerAfterStoreOrEquipNewItem` | vendor purchase |
+| `OnPlayerCanSetTradeItem` | trade restriction |
+| `OnPlayerCanSendMail` | mail restriction |
 
-### Chat-Commands (`.paragon`)
+### Chat commands (`.paragon`)
 
 - `.paragon role tank|dps|healer` (`PLAYER_FLAGS_RESTING` required)
 - `.paragon stat str|agi|int|spi` (resting required)
 - `.paragon info`
 
-### DB-Tabellen
+### DB tables
 
-| Tabelle | DB | Zweck |
+| Table | DB | Purpose |
 |---------|----|-------|
 | `character_paragon_role` | characters | role + mainStat |
-| `character_paragon_item` | characters | enchantment-Tracking pro itemGuid |
-| `character_paragon_spec` | characters | Spec-Auswahl |
-| `paragon_passive_spell_pool` | world | Pool von Passives (spellId, enchantmentId, name, category, minParagonLevel, minItemLevel) |
-| `paragon_spec_spell_assign` | world | Spec→Spell-Gewichtung |
-| `spellitemenchantment_dbc` | world | DBC-Override für ~11.323 Custom-Enchantments |
+| `character_paragon_item` | characters | enchantment tracking per itemGuid |
+| `character_paragon_spec` | characters | spec selection |
+| `paragon_passive_spell_pool` | world | pool of passives (spellId, enchantmentId, name, category, minParagonLevel, minItemLevel) |
+| `paragon_spec_spell_assign` | world | spec→spell weighting |
+| `spellitemenchantment_dbc` | world | DBC override for ~11,323 custom enchantments |
 
-### Auction-House-Restriktion
+### Auction house restriction
 
-Blockiert: `OnAuctionAdd` ist void, `CanCreateAuction` existiert nicht. Cursed Items sind ohnehin Soulbound. Nicht-Cursed Paragon-Items sind theoretisch handelbar.
+Blocked: `OnAuctionAdd` is void, `CanCreateAuction` does not exist. Cursed items are soulbound anyway. Non-cursed Paragon items are theoretically tradable.
 
 ---
 
 ## mod-loot-filter
 
-**Loader-Funktion**: `Addmod_loot_filterScripts()` in `src/mod_loot_filter_loader.cpp`.
+**Loader function**: `Addmod_loot_filterScripts()` in `src/mod_loot_filter_loader.cpp`.
 
-Per-Character-Filter-Regeln, evaluiert beim `OnPlayerLootItem`-Hook (in-memory cache).
+Per-character filter rules, evaluated on the `OnPlayerLootItem` hook (in-memory cache).
 
-### Conditions, Operators, Actions
+### Conditions, operators, actions
 
-| Condition | ID | Op verfügbar |
+| Condition | ID | Available op |
 |-----------|----|--------------|
 | Quality | 0 | =, >, < |
 | ItemLevel | 1 | =, >, < |
@@ -173,26 +173,26 @@ Per-Character-Filter-Regeln, evaluiert beim `OnPlayerLootItem`-Hook (in-memory c
 | ItemId | 6 | =, >, < |
 | NameContains | 7 | substring |
 
-Actions: Keep(0) / Sell(1) / Disenchant(2) / Delete(3). Priority: niedrigster Wert zuerst, erste Match gewinnt.
+Actions: Keep(0) / Sell(1) / Disenchant(2) / Delete(3). Priority: lowest value first, first match wins.
 
-### Cursed-Detection
+### Cursed detection
 
-Über Slot-11-Enchantment-IDs:
-- `920001` = "Cursed"-Marker
-- `950001-950099` = Passive-Spell-Enchant
+Via slot 11 enchantment IDs:
+- `920001` = "Cursed" marker
+- `950001-950099` = passive spell enchant
 
-### DB-Tabellen
+### DB tables
 
-| Tabelle | Zweck |
+| Table | Purpose |
 |---------|-------|
-| `character_loot_filter` | Regeln (characterId, ruleId, conditionType, conditionOp, conditionValue, conditionStr, action, priority, enabled) |
-| `character_loot_filter_settings` | Master-Toggle + Statistiken (totalSold, totalDisenchanted, totalDeleted) |
+| `character_loot_filter` | rules (characterId, ruleId, conditionType, conditionOp, conditionValue, conditionStr, action, priority, enabled) |
+| `character_loot_filter_settings` | master toggle + statistics (totalSold, totalDisenchanted, totalDeleted) |
 
 ### Commands
 
-`.lootfilter reload | toggle | stats`. UI: `/lf` oder `/lootfilter`.
+`.lootfilter reload | toggle | stats`. UI: `/lf` or `/lootfilter`.
 
-### Konfig-Optionen
+### Config options
 
 `LootFilter.Enable`, `AllowSell`, `AllowDisenchant`, `AllowDelete`, `LogActions`, `MaxRulesPerChar=30`.
 
@@ -200,97 +200,97 @@ Actions: Keep(0) / Sell(1) / Disenchant(2) / Delete(3). Priority: niedrigster We
 
 ## mod-auto-loot
 
-**Loader-Funktion**: `AddSC_AutoLoot()` in `src/mod_auto_loot_loader.cpp`. **Kein CLAUDE.md vorhanden** — gesamte Doku in dieser Section + `src/mod_auto_loot.cpp`.
+**Loader function**: `AddSC_AutoLoot()` in `src/mod_auto_loot_loader.cpp`. **No CLAUDE.md** — full doc lives in this section + `src/mod_auto_loot.cpp`.
 
-### Verhalten
+### Behavior
 
-Im `OnPlayerUpdate`-Tick (jeder Frame):
-- nur wenn `AOELoot.Enable=true`, Spieler nicht in Gruppe, ≥4 freie Inventarslots
-- iteriert alle toten Creatures im 10-yd-Radius (`GetDeadCreatureListInGrid`)
-- für jedes Loot-Item:
-  - **stackable Items** (`MaxCount != 1`): in Inventar, ggf. via Mail nachsenden (`AOELoot.MailEnable`)
-  - **unique Items** (`MaxCount == 1`): nur looten, wenn Spieler das Item noch NICHT hat
-- aggregiert Gold, sendet `SMSG_LOOT_MONEY_NOTIFY`, updated Achievement
-- ruft **`sScriptMgr->OnPlayerLootItem()`** für jedes Item auf — Hook-Kette: mod-paragon-itemgen (Auto-Enchant) und mod-loot-filter (Filter) greifen.
+In the `OnPlayerUpdate` tick (every frame):
+- only if `AOELoot.Enable=true`, the player is not in a group, ≥4 free inventory slots
+- iterates all dead creatures in a 10-yd radius (`GetDeadCreatureListInGrid`)
+- for each loot item:
+  - **stackable items** (`MaxCount != 1`): into inventory, optionally sent on by mail (`AOELoot.MailEnable`)
+  - **unique items** (`MaxCount == 1`): only looted if the player does NOT already have the item
+- aggregates gold, sends `SMSG_LOOT_MONEY_NOTIFY`, updates the achievement
+- calls **`sScriptMgr->OnPlayerLootItem()`** for each item — hook chain: mod-paragon-itemgen (auto-enchant) and mod-loot-filter (filter) take effect.
 
-### Truhen
+### Chests
 
-Wenn Spieler `Lockpicking` (Skill 186) hat: nahegelegene `GAMEOBJECT_TYPE_CHEST` werden via Spell `2575` "geöffnet" und gelootet. Truhe wird despawned nach erfolgreichem Looten.
+If the player has `Lockpicking` (skill 186): nearby `GAMEOBJECT_TYPE_CHEST` objects are "opened" via spell `2575` and looted. The chest is despawned after a successful loot.
 
-### Konfig
+### Config
 
-`AOELoot.Enable=true`, `AOELoot.MailEnable=true`, plus String-IDs:
-- `AOE_ACORE_STRING_MESSAGE = 50000` (Login-Welcome)
+`AOELoot.Enable=true`, `AOELoot.MailEnable=true`, plus string IDs:
+- `AOE_ACORE_STRING_MESSAGE = 50000` (login welcome)
 - `AOE_ITEM_IN_THE_MAIL = 50001`
 
 ---
 
 ## mod-endless-storage
 
-**Loader-Funktionen**: 
-- C++: `Addmod_endless_storageScripts()` in `src/mod_endless_storage_loader.cpp` (Crafting-Hooks)
+**Loader functions**:
+- C++: `Addmod_endless_storageScripts()` in `src/mod_endless_storage_loader.cpp` (crafting hooks)
 - Lua: `lua_scripts/endless_storage_server.lua` + `endless_storage_client.lua` (UI)
 
-### UI / Tabs
+### UI / tabs
 
-15 Material-Kategorien (`ITEM_SUBCLASS_*` der TradeGoods + Gems) + Rezepte-Tab (`ITEM_CLASS_RECIPE`). Slash `/es` oder `/storage`.
+15 material categories (`ITEM_SUBCLASS_*` of TradeGoods + Gems) + recipes tab (`ITEM_CLASS_RECIPE`). Slash `/es` or `/storage`.
 
-### Akzeptierte Item-Klassen
+### Accepted item classes
 
-| Klasse | Bedingung | Tab |
+| Class | Condition | Tab |
 |--------|-----------|-----|
-| `ITEM_CLASS_TRADE_GOODS` (7) | `MaxStackSize > 1` | nach Subclass |
+| `ITEM_CLASS_TRADE_GOODS` (7) | `MaxStackSize > 1` | by subclass |
 | `ITEM_CLASS_GEM` (3) | `MaxStackSize > 1` | Jewelcrafting |
-| `ITEM_CLASS_RECIPE` (9) | alle | Rezepte |
+| `ITEM_CLASS_RECIPE` (9) | all | Recipes |
 
-### DB-Tabelle (acore_characters)
+### DB table (acore_characters)
 
 `custom_endless_storage`: `character_id`, `item_entry`, `item_subclass`, `item_class`, `amount` (PK = `character_id, item_entry`).
 
-### Server-Handler
+### Server handlers
 
-| Handler | Funktion |
+| Handler | Function |
 |---------|----------|
-| `ES.RequestData(player, catIndex)` | Kategorie laden, `UpdateItems` an Client |
-| `ES.Withdraw(player, itemEntry, catIndex)` | 1 Stack entnehmen → `AddItem` → Refresh |
-| `ES.Deposit(player, catIndex)` | Inventar-Slots 23–38 + Bags 19–22 scannen, in DB schreiben |
+| `ES.RequestData(player, catIndex)` | load category, `UpdateItems` to client |
+| `ES.Withdraw(player, itemEntry, catIndex)` | take 1 stack → `AddItem` → refresh |
+| `ES.Deposit(player, catIndex)` | scan inventory slots 23–38 + bags 19–22, write into DB |
 
-Item-Template-Cache (`itemInfoCache`) reduziert Worlddb-Queries.
+The item template cache (`itemInfoCache`) reduces worlddb queries.
 
-### Crafting-Integration
+### Crafting integration
 
-Die in azerothcore-wotlk hinzugefügten Hooks `OnPlayerCheckReagent` und `OnPlayerConsumeReagent` werden in `mod_endless_storage_crafting.cpp` implementiert:
-- `Spell::CheckItems()` fragt zusätzlich `custom_endless_storage` ab, wenn Inventar-Reagenzien fehlen
-- `Spell::TakeReagents()` konsumiert aus Storage, **bevor** `DestroyItemCount` greift
-- Player merkt nichts — Crafting "sieht" alle Materialien automatisch.
+The hooks `OnPlayerCheckReagent` and `OnPlayerConsumeReagent` added in azerothcore-wotlk are implemented in `mod_endless_storage_crafting.cpp`:
+- `Spell::CheckItems()` additionally queries `custom_endless_storage` when inventory reagents are missing
+- `Spell::TakeReagents()` consumes from storage **before** `DestroyItemCount` kicks in
+- the player notices nothing — crafting "sees" all materials automatically.
 
 ---
 
 ## mod-custom-spells
 
-**Loader-Funktion**: `Addmod_custom_spellsScripts()` in `src/mod_custom_spells_loader.cpp`.
+**Loader function**: `Addmod_custom_spellsScripts()` in `src/mod_custom_spells_loader.cpp`.
 
-Custom Spell-Mechaniken in der 900xxx-ID-Range. Pro Klasse ein eigenes `.cpp`-File, das alle Spec-Blöcke registriert. Vollständige Spec-Doku als File-pro-Spec unter [`docs/custom-spells/`](./custom-spells/00-overview.md) — hier nur das Wesentliche für die Modul-Übersicht.
+Custom spell mechanics in the 900xxx ID range. One `.cpp` file per class that registers all spec blocks. Full spec docs as one-file-per-spec under [`docs/custom-spells/`](./custom-spells/00-overview.md) — only the essentials are here for the module overview.
 
-### Drei Hook-Strategien
+### Three hook strategies
 
-1. **Eigene Custom-Spells** (eigene ID, eigener DBC-Eintrag, eigener `SpellScript` per `RegisterSpellScript`).
-2. **Hook auf Blizzard-Spells** — `spell_script_names` verknüpft eine bestehende ID (z. B. 1680 Whirlwind, 23881 Bloodthirst, 57823 Revenge) mit einer Custom-C++-Klasse. **Pflicht**: `HasAura()`-Check auf einen Marker-Spell, sonst greift der Effekt bei jedem Spieler.
-3. **AuraScript mit Proc** — passive Aura wird über `spell_proc` scharfgemacht. Filterung in C++ via `CheckProc`, weil DBC `EffectSpellClassMask` von `SPELL_AURA_PROC_TRIGGER_SPELL` ignoriert wird (siehe [03-spell-system.md](./03-spell-system.md#wichtig-dbc-effectspellclassmask-wird-ignoriert)).
+1. **Custom spells** (own ID, own DBC entry, own `SpellScript` via `RegisterSpellScript`).
+2. **Hook on Blizzard spells** — `spell_script_names` links an existing ID (e.g. 1680 Whirlwind, 23881 Bloodthirst, 57823 Revenge) to a custom C++ class. **Required**: `HasAura()` check on a marker spell, otherwise the effect kicks in for every player.
+3. **AuraScript with proc** — passive aura is armed via `spell_proc`. Filtering in C++ via `CheckProc`, because DBC `EffectSpellClassMask` is ignored by `SPELL_AURA_PROC_TRIGGER_SPELL` (see [03-spell-system.md](./03-spell-system.md#important-dbc-effectspellclassmask-is-ignored)).
 
-### Source-Layout (`mod-custom-spells/src/`)
+### Source layout (`mod-custom-spells/src/`)
 
-| File | Inhalt |
+| File | Contents |
 |------|--------|
-| `mod_custom_spells_loader.cpp` | `Addmod_custom_spellsScripts()` Entry-Point |
-| `custom_spells.cpp` | Master-Switch (PlayerScript `OnPlayerSpellCast`) |
-| `custom_spells_common.h` | geteilte Konstanten/Includes |
-| `custom_spells_global.cpp` | Non-Class Spells 901100–901199 |
-| `custom_spells_<class>.cpp` | je eine Datei pro Klasse |
+| `mod_custom_spells_loader.cpp` | `Addmod_custom_spellsScripts()` entry point |
+| `custom_spells.cpp` | master switch (PlayerScript `OnPlayerSpellCast`) |
+| `custom_spells_common.h` | shared constants/includes |
+| `custom_spells_global.cpp` | non-class spells 901100–901199 |
+| `custom_spells_<class>.cpp` | one file per class |
 
-### ID-Block-Schema (Kurzform)
+### ID block scheme (short form)
 
-| Range | Inhalt |
+| Range | Contents |
 |-------|--------|
 | 900100–900199 | Warrior (Arms/Fury/Prot) |
 | 900200–900299 | Paladin (Holy/Prot/Ret) |
@@ -302,17 +302,17 @@ Custom Spell-Mechaniken in der 900xxx-ID-Range. Pro Klasse ein eigenes `.cpp`-Fi
 | 900800–900899 | Warlock (Affli/Demo/Destro) |
 | 900900–900999 | Priest (Disc/Holy/Shadow) |
 | 901000–901099 | Druid (Balance/Feral Tank/Feral DPS/Resto) |
-| 901100–901199 | Global / Non-Class |
+| 901100–901199 | Global / non-class |
 
-Vollständige Allokation pro Spec: [`custom-spells/02-id-blocks.md`](./custom-spells/02-id-blocks.md).
+Full allocation per spec: [`custom-spells/02-id-blocks.md`](./custom-spells/02-id-blocks.md).
 
-### Integration mit anderen Modulen
+### Integration with other modules
 
-- **mod-paragon**: viele Custom-Spells skalieren mit `paragonLevel` (Aura-Stack 100000) — z. B. Paragon Strike (900106).
-- **azerothcore-wotlk**: benötigt Spell.dbc-Patches für eigene Custom-Spell-IDs (Tooltips). Server-seitig reicht `spell_dbc`-Override.
-- **Konfig**: `CustomSpells.Enable` (1/0) in `mod_custom_spells.conf.dist`.
+- **mod-paragon**: many custom spells scale with `paragonLevel` (aura stack 100000) — e.g. Paragon Strike (900106).
+- **azerothcore-wotlk**: requires Spell.dbc patches for own custom spell IDs (tooltips). Server-side a `spell_dbc` override is enough.
+- **Config**: `CustomSpells.Enable` (1/0) in `mod_custom_spells.conf.dist`.
 
-### Bekannte Issues
+### Known issues
 
-- ProcFlags-Werte in der alten `CLAUDE.md` waren teils falsch — korrigiert in [`custom-spells/03-procs-and-flags.md`](./custom-spells/03-procs-and-flags.md) und im Mod-Repo unter `PROCFLAGS_REFERENCE.md`.
-- Mage Shared (900700–900732) und Mage Arcane (900700–900732) teilen sich dieselbe Range im Master-Plan — noch zu klären.
+- Several ProcFlags values in the legacy `CLAUDE.md` were wrong — corrected in [`custom-spells/03-procs-and-flags.md`](./custom-spells/03-procs-and-flags.md) and in the mod repo at `PROCFLAGS_REFERENCE.md`.
+- Mage Shared (900700–900732) and Mage Arcane (900700–900732) share the same range in the master plan — still to be clarified.
