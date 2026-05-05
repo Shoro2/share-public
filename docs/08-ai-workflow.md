@@ -1,80 +1,80 @@
-# 08 — AI-Workflow
+# 08 — AI workflow
 
-Konkrete Marschroute für KI-Sessions am Projekt. Kerngedanken: **klein lesen, klein schreiben, alles loggen.**
+Concrete marching orders for AI sessions on the project. Core ideas: **read small, write small, log everything.**
 
-## 1. Lese-Strategie (verhindert Tool-Errors)
+## 1. Reading strategy (avoids tool errors)
 
-Drei Fehlerklassen treten regelmäßig auf, wenn man unbedacht große Files liest:
+Three error classes regularly come up when large files are read carelessly:
 
-| Fehler | Auslöser | Workaround |
+| Error | Cause | Workaround |
 |--------|----------|------------|
-| `result (NN characters) exceeds maximum allowed tokens` | Datei > ~25 K Tokens (~80 KB Text) bei `mcp__github__get_file_contents` | Tool schreibt das Ergebnis automatisch in `/root/.claude/projects/.../tool-results/*.txt` — von dort chunked weiterlesen |
-| `File content (NN tokens) exceeds maximum allowed tokens (25000)` | `Read` ohne `limit:` auf großer Datei | immer `offset` + `limit` setzen (z.B. `limit: 300`) |
-| `Stream idle timeout — partial response received` | zu lange / zu viele parallele Tool-Calls in einer Antwort | jeden `mcp__github__create_or_update_file` einzeln, nicht batched; Output zwischen Calls knapp halten |
+| `result (NN characters) exceeds maximum allowed tokens` | file > ~25 K tokens (~80 KB text) on `mcp__github__get_file_contents` | the tool automatically writes the result to `/root/.claude/projects/.../tool-results/*.txt` — read it from there in chunks |
+| `File content (NN tokens) exceeds maximum allowed tokens (25000)` | `Read` without `limit:` on a large file | always set `offset` + `limit` (e.g. `limit: 300`) |
+| `Stream idle timeout — partial response received` | too long / too many parallel tool calls in one response | issue each `mcp__github__create_or_update_file` separately, not batched; keep output short between calls |
 
-### Empfohlene Reihenfolge
+### Recommended order
 
-1. **Immer mit [`AI_GUIDE.md`](../AI_GUIDE.md) starten** — kleinster Einstiegspunkt, verlinkt alle Detail-Dokumente.
-2. **Nur das relevante `docs/`-Kapitel** laden — alle <12 KB.
-3. **Pro Modul-Repo** gilt die gleiche 4-File-Konvention (siehe Abschnitt "Per-Repo-Doku-Konvention" unten):
-   - `INDEX.md` zuerst (Einstieg, ~1 KB),
-   - `CLAUDE.md` für Zweck/Inhalt,
-   - `data_structure.md` für Folder/Files,
-   - `functions.md` für Mechaniken/Hooks/Konfig,
-   - `log.md` für Commit-Historie,
-   - `todo.md` für offene Aufgaben.
-4. **Für Code/SQL/Configs**: gezielt mit `mcp__github__get_file_contents` und Pfad. Wenn Datei > 60 KB ist, vorher per `search_code` einzelne Symbole identifizieren.
-5. **Für die alte `CLAUDE.md` in `share-public` (60 KB) im Notfall**:
+1. **Always start with [`AI_GUIDE.md`](../AI_GUIDE.md)** — smallest entry point, links all detail documents.
+2. **Load only the relevant `docs/` chapter** — all <12 KB.
+3. **Per module repo** the same 4-file convention applies (see "Per-repo doc convention" below):
+   - `INDEX.md` first (entry, ~1 KB),
+   - `CLAUDE.md` for purpose/contents,
+   - `data_structure.md` for folders/files,
+   - `functions.md` for mechanics/hooks/config,
+   - `log.md` for commit history,
+   - `todo.md` for open tasks.
+4. **For code/SQL/configs**: target `mcp__github__get_file_contents` with a path. If a file is > 60 KB, identify single symbols via `search_code` first.
+5. **For the legacy `CLAUDE.md` in `share-public` (60 KB) when needed**:
    ```
    mcp__github__get_file_contents owner=shoro2 repo=share-public path=CLAUDE.md
-       → Truncation-Datei /root/.claude/projects/.../tool-results/*.txt
+       → truncation file /root/.claude/projects/.../tool-results/*.txt
    jq -r '.[1].text' <file>.txt > /tmp/sp_claude.md
-   grep -E '^#' /tmp/sp_claude.md   # Sections finden
-   Read file_path=/tmp/sp_claude.md offset=N limit=300  # Chunks lesen
+   grep -E '^#' /tmp/sp_claude.md   # find sections
+   Read file_path=/tmp/sp_claude.md offset=N limit=300  # read chunks
    ```
-6. **Für `mysql_column_list_all.txt` (riesig)** nur per `grep` nach Tabellennamen:
+6. **For `mysql_column_list_all.txt` (huge)** only via `grep` for table names:
    ```
    grep '^`creature_template`' mysqldbextracts/mysql_column_list_all.txt
    ```
-7. **DBC-Dateien sind binär** — niemals als Text lesen. Bearbeitung via `python_scripts/patch_dbc.py` / `copy_spells_dbc.py` oder via DB-Override-Tabellen (`*_dbc`).
+7. **DBC files are binary** — never read as text. Edit via `python_scripts/patch_dbc.py` / `copy_spells_dbc.py` or via DB override tables (`*_dbc`).
 
-## 2. Per-Repo-Doku-Konvention
+## 2. Per-repo doc convention
 
-In jedem Modul-/Core-Repo (also **alle ausser** `share-public`) gilt seit 2026-05 dieselbe Datei-Konvention:
+Every module/core repo (i.e. **all except** `share-public`) has shared the same file convention since 2026-05:
 
-| Datei | Größe | Zweck |
+| File | Size | Purpose |
 |-------|-------|-------|
-| `INDEX.md` | < 1 KB | Einstiegspunkt; listet die anderen Files mit Größe + Einzeiler |
-| `CLAUDE.md` | < 8 KB | **Inhalt/Zweck** — was ist dieses Modul, welche Rolle spielt es, welche IDs/DB-Tabellen gehören dazu (kein Mechanik-Detail!) |
-| `data_structure.md` | < 6 KB | exakte Folder/File-Auflistung mit Einzeiler-Beschreibungen |
-| `functions.md` | < 15 KB | Mechaniken, Hooks, Funktions-Signaturen, Konfig-Optionen, AIO-Handler — die "Wie funktioniert das?"-Details |
-| `log.md` | wächst | minimaler Änderungslog, eine Zeile pro Commit mit Hash-Link |
-| `todo.md` | klein | offene Aufgaben mit Priorität (`(hoch)`/`(mittel)`/`(niedrig)`); erledigte Items werden **entfernt** und in `log.md` dokumentiert (nicht durchgestrichen) |
+| `INDEX.md` | < 1 KB | entry point; lists the other files with size + one-liner |
+| `CLAUDE.md` | < 8 KB | **Content/purpose** — what is this module, what role does it play, which IDs/DB tables belong to it (no mechanics detail!) |
+| `data_structure.md` | < 6 KB | exact folder/file listing with one-liner descriptions |
+| `functions.md` | < 15 KB | mechanics, hooks, function signatures, config options, AIO handlers — the "how does it work?" details |
+| `log.md` | grows | minimal change log, one line per commit with hash link |
+| `todo.md` | small | open tasks with priority (`(high)`/`(medium)`/`(low)`); completed items are **removed** and documented in `log.md` (not crossed out) |
 
-**Cross-Cutting** liegt zentral in `share-public`:
-- `share-public/claude_log.md` = Cross-Repo-Historie + größere Reviews
-- `share-public/AI_GUIDE.md` + `docs/` = projektweite Doku
+**Cross-cutting** lives centrally in `share-public`:
+- `share-public/claude_log.md` = cross-repo history + larger reviews
+- `share-public/AI_GUIDE.md` + `docs/` = project-wide documentation
 
-## 3. Schreib-Strategie (verhindert Stream-Timeouts)
+## 3. Writing strategy (avoids stream timeouts)
 
-- **Pro `mcp__github__create_or_update_file`-Aufruf eine Datei.** Nicht versuchen, 5+ Dateien per `push_files` zu bündeln, wenn der Inhalt jeweils >5 KB ist — der Stream kann idle-timeouten.
-- **Output zwischen Tool-Calls knapp halten.** Lange Erläuterungstexte zwischen Calls erhöhen Timeout-Risiko.
-- **Parallele Tool-Calls nur wenn klein und idempotent.** Max ~3 parallele `get_file_contents`-Reads gleichzeitig.
-- **Existierende Dateien**: vor `Edit`/`create_or_update_file` SHA per `get_file_contents` holen. SHA ist im Result als `sha`-Feld.
-- **Grosse Files updaten**: lokal in `/tmp/` zwischenkopieren, mit `Edit`/`Write` lokal anpassen, dann via `create_or_update_file` mit `content` und altem `sha` hochladen.
+- **One file per `mcp__github__create_or_update_file` call.** Don't try to bundle 5+ files via `push_files` if the contents are each >5 KB — the stream may idle-timeout.
+- **Keep output between tool calls short.** Long explanatory text between calls increases timeout risk.
+- **Parallel tool calls only when small and idempotent.** Max ~3 parallel `get_file_contents` reads at once.
+- **Existing files**: before `Edit`/`create_or_update_file` fetch the SHA via `get_file_contents`. The SHA is in the result's `sha` field.
+- **Updating large files**: copy locally to `/tmp/`, edit with `Edit`/`Write` locally, then upload via `create_or_update_file` with `content` and the old `sha`.
 
-## 4. Branch-Konventionen
+## 4. Branch conventions
 
-- **Branch pro Repo**: `claude/<beschreibung>-<sessionId>` (z.B. `claude/review-markdown-docs-bTSgu`). Selber Branch-Name in allen Repos die zur Session gehören.
-- **Push** mit `git push -u origin <branch>`. Bei Netzwerkfehler max 4 Retries mit Exponential-Backoff (2s, 4s, 8s, 16s).
-- **Niemals destruktive Git-Befehle** (`reset --hard`, `push --force`, `branch -D`) ohne explizite User-Anweisung.
-- **Hooks nicht skippen** (`--no-verify`, `--no-gpg-sign`) ausser explizit erlaubt.
-- **Niemals `--amend`** auf bereits gepushte Commits — neuen Commit erstellen.
-- **Keine PRs ohne expliziten User-Wunsch.** Branch wird gepusht, der User entscheidet über PR.
+- **Branch per repo**: `claude/<description>-<sessionId>` (e.g. `claude/review-markdown-docs-bTSgu`). Same branch name across all repos involved in the session.
+- **Push** with `git push -u origin <branch>`. On network failure max 4 retries with exponential backoff (2s, 4s, 8s, 16s).
+- **Never destructive Git commands** (`reset --hard`, `push --force`, `branch -D`) without explicit user instruction.
+- **Don't skip hooks** (`--no-verify`, `--no-gpg-sign`) unless explicitly allowed.
+- **Never `--amend`** on already-pushed commits — create a new commit.
+- **No PRs without explicit user request.** Branch is pushed, the user decides about PRs.
 
-## 5. Commit-Konventionen
+## 5. Commit conventions
 
-Conventional Commits — siehe [07-codestyle.md](./07-codestyle.md#commit-message-format). Kurzform:
+Conventional Commits — see [07-codestyle.md](./07-codestyle.md#commit-message-format). Short form:
 
 ```
 feat(Core/Spells): Add Life Leech stat
@@ -83,95 +83,95 @@ docs: Restructure AI guide into modular docs/
 chore(DB): import pending files
 ```
 
-## 6. Logging-Pflicht (`claude_log.md` + `log.md`)
+## 6. Logging duty (`claude_log.md` + `log.md`)
 
-Es gibt **zwei** Log-Ebenen:
+There are **two** log levels:
 
-### A) Cross-Repo / projekt-weit: `share-public/claude_log.md`
+### A) Cross-repo / project-wide: `share-public/claude_log.md`
 
-**Jede** nicht-triviale Änderung an einem Projekt-Repo wird hier protokolliert. Format:
+**Every** non-trivial change to a project repo is recorded here. Format:
 
 ```markdown
 ### YYYY-MM-DD
 
-#### [repo-name] Kurzbeschreibung
+#### [repo-name] Short description
 
-- **Zeitstempel**: YYYY-MM-DD (HH:MM optional)
+- **Timestamp**: YYYY-MM-DD (HH:MM optional)
 - **Repo**: repository-name
-- **Problem** / **Änderungen** / **Lösung**: kurze Beschreibung
-- **Betroffene Dateien**:
-  - `pfad/zu/datei.cpp`
-  - `pfad/zu/datei.sql`
+- **Problem** / **Changes** / **Solution**: short description
+- **Affected files**:
+  - `path/to/file.cpp`
+  - `path/to/file.sql`
 - **Branch**: `claude/<name>-<id>`
-- **Commit**: `abc1234` (falls bekannt)
+- **Commit**: `abc1234` (if known)
 ```
 
-Einsortieren nach Datum **absteigend** — neuester Eintrag oben, unmittelbar unterhalb der `## Änderungshistorie`-Sektion.
+Sort by date **descending** — newest entry on top, immediately below the `## Change history` section.
 
-Bei größeren Reviews / Sessions, deren Inhalt allein schon mehrere KB Doku produziert, **separates Log-File** anlegen (Beispiel: `claude_log_2026-04-27_custom_spells_review.md`) und im Haupt-`claude_log.md` darauf verlinken.
+For larger reviews / sessions whose content alone produces several KB of doc, create a **separate log file** (example: `claude_log_2026-04-27_custom_spells_review.md`) and link it from the main `claude_log.md`.
 
-### B) Pro-Repo: `<repo>/log.md`
+### B) Per repo: `<repo>/log.md`
 
-Minimal-Log, eine Zeile pro Commit:
+Minimal log, one line per commit:
 
 ```markdown
 - 2026-05-01 `abc1234` — feat(Core/Spells): Add Life Leech stat
 ```
 
-Hier steht **nichts** über Pläne / TODOs / Zusammenhänge — nur die nackte Commit-Spur. Plan/TODO gehört nach `<repo>/todo.md` bzw. `share-public/claude_log.md`.
+This file contains **nothing** about plans / TODOs / context — only the bare commit trail. Plan/TODO belongs in `<repo>/todo.md` or `share-public/claude_log.md`.
 
-## 7. Plan-Dokumentation (TODOs)
+## 7. Plan documentation (TODOs)
 
-Es gibt zwei Speicherorte:
+There are two storage locations:
 
-| Was | Wohin |
+| What | Where |
 |-----|-------|
-| Modul-spezifische offene Aufgabe (gameplay, code, tests) | `<repo>/todo.md` mit Priorität-Tag `(hoch)/(mittel)/(niedrig)` |
-| Cross-Repo-Roadmap, Phasenplan, abgeschlossene größere Pläne | `share-public/claude_log.md` unter `## Offene Pläne und TODOs` |
+| Module-specific open task (gameplay, code, tests) | `<repo>/todo.md` with priority tag `(high)/(medium)/(low)` |
+| Cross-repo roadmap, phase plan, completed major plans | `share-public/claude_log.md` under `## Open plans and TODOs` |
 
-`todo.md` Format:
+`todo.md` format:
 
 ```markdown
-## Sicherheit
-- [ ] **(mittel)** Beschreibung — Begründung
+## Security
+- [ ] **(medium)** Description — rationale
 ## Performance
-- [ ] **(niedrig)** ...
+- [ ] **(low)** ...
 ```
 
-**Erledigte Items** in `todo.md` werden **entfernt** (nicht durchgestrichen) und im `log.md`-Commit-Eintrag des erledigenden Commits dokumentiert. Damit bleibt `todo.md` immer der aktuelle Stand der offenen Punkte.
+**Completed items** in `todo.md` are **removed** (not crossed out) and documented in the `log.md` commit entry of the resolving commit. That keeps `todo.md` always reflecting the current open items.
 
-## 8. Workflow-Schritt für Schritt
+## 8. Workflow step by step
 
-1. **Lies** `AI_GUIDE.md`, das passende `docs/`-Kapitel und im betroffenen Modul-Repo `INDEX.md` + relevante 4-File-Sektion.
-2. **Prüfe `todo.md`** im Modul-Repo — vielleicht ist dein Auftrag schon dort gelistet.
-3. **TODO-Liste** anlegen (`TodoWrite`) bei nicht-trivialen Aufgaben (≥3 Schritte).
-4. **Branch erstellen** (`mcp__github__create_branch`) — `claude/<beschreibung>-<sessionId>`.
-5. **Implementieren**, kleinteilige Commits, Conventional Commits.
+1. **Read** `AI_GUIDE.md`, the matching `docs/` chapter, and in the affected module repo `INDEX.md` + the relevant 4-file section.
+2. **Check `todo.md`** in the module repo — your task may already be listed.
+3. **TODO list** via `TodoWrite` for non-trivial tasks (≥3 steps).
+4. **Create the branch** (`mcp__github__create_branch`) — `claude/<description>-<sessionId>`.
+5. **Implement**, small commits, Conventional Commits.
 6. **Update**:
-   - `<repo>/log.md` — neue Commit-Zeile(n)
-   - `<repo>/todo.md` — erledigtes Item entfernen
-   - `share-public/claude_log.md` — Datums-Eintrag mit Repo-Tag
-   - bei Strukturänderungen: `<repo>/data_structure.md` aktuell halten
-   - bei neuen Mechaniken/Hooks: `<repo>/functions.md` ergänzen
-7. **Push** mit Retries.
-8. **Bei UI-Änderungen**: testen mit `/aio reset` oder Charakter-Reload, sonst alte Closures aktiv (siehe [04-aio-framework.md](./04-aio-framework.md#re-registrierungs-falle)).
-9. **Zusammenfassung** an den User: Branch-URL nennen, was geändert wurde, was nicht.
+   - `<repo>/log.md` — new commit line(s)
+   - `<repo>/todo.md` — remove completed items
+   - `share-public/claude_log.md` — date entry with repo tag
+   - on structural changes: keep `<repo>/data_structure.md` up to date
+   - on new mechanics/hooks: extend `<repo>/functions.md`
+7. **Push** with retries.
+8. **For UI changes**: test with `/aio reset` or character reload, otherwise old closures stay active (see [04-aio-framework.md](./04-aio-framework.md#re-registration-trap)).
+9. **Summary** to the user: name the branch URL, what changed, what didn't.
 
-## 9. Sprache
+## 9. Language
 
-- **Logs / Doku**: Deutsch (Projektsprache)
-- **Code-Kommentare**: Englisch
-- **Commit-Messages**: Englisch (Conventional Commits)
-- **Markdown-Tabellen-Header**: nach Bedarf — Mischung erlaubt, im Zweifel Deutsch.
+- **Logs / docs**: English (project language)
+- **Code comments**: English
+- **Commit messages**: English (Conventional Commits)
+- **Markdown table headers**: as needed — mixing allowed, when in doubt English.
 
-## 10. Was NICHT tun
+## 10. What NOT to do
 
-- **kein** ungefragter Build (`make -j`) — dauert lang, blockiert Session
-- **keine** ungefragte SQL-Ausführung gegen produktive DBs
-- **kein** PR ohne Userwunsch
-- **kein** `git push --force`, `git reset --hard`, `git branch -D` ohne Anweisung
-- **keine** Edits an `data/sql/base/` oder `data/sql/archive/` (CI-Warnung, Maintainer-Approval nötig)
-- **keine** Konfig-/Settings-Dateien (`settings.local.json` etc.) ändern, ohne explizit gefragt zu werden
-- **keine** Mehrfach-File-Pushes (`push_files` mit >2 Files á >5 KB) — Stream-Timeout-Risiko
-- **keine** Volltext-Reads von Files ≥ 60 KB ohne Chunking-Strategie
-- **keine** `todo.md`-Items durchstreichen/abhaken — entfernen und in `log.md` eintragen
+- **No** unprompted build (`make -j`) — takes long, blocks the session
+- **no** unprompted SQL execution against production DBs
+- **no** PR without user request
+- **no** `git push --force`, `git reset --hard`, `git branch -D` without instruction
+- **no** edits to `data/sql/base/` or `data/sql/archive/` (CI warning, maintainer approval required)
+- **do not** modify config/settings files (`settings.local.json` etc.) without being explicitly asked
+- **no** multi-file pushes (`push_files` with >2 files of >5 KB each) — stream timeout risk
+- **no** full-text reads of files ≥ 60 KB without a chunking strategy
+- **don't** cross out / tick `todo.md` items — remove them and add to `log.md`
