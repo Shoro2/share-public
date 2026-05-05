@@ -1,42 +1,42 @@
-# 09 — Datenbank-Tabellen-Inventar
+# 09 — Database table inventory
 
-Übersicht aller relevanten Tabellen in den drei AzerothCore-Datenbanken (`acore_auth`, `acore_world`, `acore_characters`). Custom-Tabellen aus den Modulen sind separat ausgewiesen.
+Overview of all relevant tables across the three AzerothCore databases (`acore_auth`, `acore_world`, `acore_characters`). Custom tables from the modules are listed separately.
 
-> **Vollständige Spaltenreferenz**: `mysqldbextracts/mysql_column_list_all.txt` (304 Tabellen, 4.129 Spalten). Format pro Zeile: `` `tabelle`.`spalte` ``.
+> **Full column reference**: `mysqldbextracts/mysql_column_list_all.txt` (304 tables, 4,129 columns). Format per line: `` `table`.`column` ``.
 
 ---
 
-## Custom-Tabellen (Projekt-spezifisch)
+## Custom tables (project-specific)
 
 ### Characters DB
 
-| Tabelle | Modul | Zweck |
+| Table | Module | Purpose |
 |---------|-------|-------|
-| `character_paragon` | mod-paragon | Account-weites Level/XP |
-| `character_paragon_points` | mod-paragon | Pro-Charakter Stat-Verteilung (16 Stats) |
-| `character_paragon_role` | mod-paragon-itemgen | Rolle + Main Stat Wahl |
-| `character_paragon_item` | mod-paragon-itemgen | Tracking enchanteter Items |
-| `character_paragon_spec` | mod-paragon-itemgen | Talent-Spec Auswahl |
-| `character_loot_filter` | mod-loot-filter | Filterregeln pro Charakter |
-| `character_loot_filter_settings` | mod-loot-filter | Master-Toggle + Stats |
-| `custom_endless_storage` | mod-endless-storage | Unendliches Lager (character_id, item_entry, amount) |
+| `character_paragon` | mod-paragon | Account-wide Level/XP |
+| `character_paragon_points` | mod-paragon | Per-character stat distribution (16 stats) |
+| `character_paragon_role` | mod-paragon-itemgen | Role + main stat choice |
+| `character_paragon_item` | mod-paragon-itemgen | Tracking of enchanted items |
+| `character_paragon_spec` | mod-paragon-itemgen | Talent spec selection |
+| `character_loot_filter` | mod-loot-filter | Filter rules per character |
+| `character_loot_filter_settings` | mod-loot-filter | Master toggle + stats |
+| `custom_endless_storage` | mod-endless-storage | Unlimited storage (character_id, item_entry, amount) |
 
 ### World DB
 
-| Tabelle | Modul | Zweck |
+| Table | Module | Purpose |
 |---------|-------|-------|
-| `spell_script_names` | mod-custom-spells | SpellScript ↔ Spell-ID Zuordnung |
-| `spell_proc` | mod-custom-spells | Proc-Konfiguration |
-| `spellitemenchantment_dbc` | mod-paragon-itemgen | DBC-Override für 11.323 Custom-Enchantments |
-| `paragon_passive_spell_pool` | mod-paragon-itemgen | Pool verfügbarer passiver Spells |
-| `paragon_spec_spell_assign` | mod-paragon-itemgen | Spec → Spell Zuordnungen (gewichtet) |
+| `spell_script_names` | mod-custom-spells | SpellScript ↔ spell ID mapping |
+| `spell_proc` | mod-custom-spells | Proc configuration |
+| `spellitemenchantment_dbc` | mod-paragon-itemgen | DBC override for 11,323 custom enchantments |
+| `paragon_passive_spell_pool` | mod-paragon-itemgen | Pool of available passive spells |
+| `paragon_spec_spell_assign` | mod-paragon-itemgen | Spec → spell mappings (weighted) |
 
 ---
 
-## AzerothCore-Tabellen nach Kategorie
+## AzerothCore tables by category
 
-### Achievement-System
-| Tabelle | Spalten | Wichtige Felder |
+### Achievement system
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `achievement_category_dbc` | 20 | ID, Name_Lang_* (16 Locales) |
 | `achievement_criteria_data` | 5 | criteria_id, ScriptName, type, value1, value2 |
@@ -45,8 +45,8 @@
 | `achievement_reward` | 8 | ID, ItemID, MailTemplateID, Sender, Subject |
 | `achievement_reward_locale` | 4 | ID, Locale, Subject, Text |
 
-### Kreatur-System
-| Tabelle | Spalten | Wichtige Felder |
+### Creature system
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `creature` | 27 | guid, id1-id3, map, position_x/y/z, spawntimesecs |
 | `creature_addon` | 8 | guid, path_id, mount, bytes1, bytes2, emote, auras |
@@ -70,8 +70,8 @@
 | `creaturespelldata_dbc` | 9 | ID, Spells_1-4, Availability_1-4 |
 | `creaturetype_dbc` | 19 | ID, Name_Lang_*, Flags |
 
-### Item-System
-| Tabelle | Spalten | Wichtige Felder |
+### Item system
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `item_template` | 138 | entry, class, subclass, name, Quality, ItemLevel, RequiredLevel, stat_type1-10, stat_value1-10, dmg_min1/2, dmg_max1/2, armor, spellid_1-5, socketColor_1-3, ScriptName |
 | `item_template_locale` | 5 | ID, locale, Name, Description |
@@ -84,8 +84,8 @@
 | `itemrandomsuffix_dbc` | 29 | ID, Name_Lang_*, Enchantment_1-5, AllocationPct_1-5 |
 | `itemset_dbc` | 53 | ID, Name_Lang_*, ItemID_1-17, SetSpellID_1-8 |
 
-### Spell-System
-| Tabelle | Spalten | Wichtige Felder |
+### Spell system
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `spell_dbc` | 234 | ID, Attributes, AttributesEx-Ex7, SpellName_Lang_*, Effects, Targets, CastingTimeIndex, DurationIndex, RangeIndex, SpellFamilyName, SpellFamilyFlags |
 | `spell_script_names` | 2 | spell_id, ScriptName |
@@ -111,8 +111,8 @@
 | `spellrange_dbc` | 40 | ID, RangeMin/Max, DisplayName_Lang_* |
 | `spellrunecost_dbc` | 5 | ID, Blood, Frost, Unholy, RunicPower |
 
-### Quest-System
-| Tabelle | Spalten | Wichtige Felder |
+### Quest system
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `quest_template` | 105 | ID, QuestType, Flags, RewardChoiceItemID1-6, RewardItemId1-4, RewardMoney, RewardXPDifficulty |
 | `quest_template_addon` | 18 | ID, MaxLevel, AllowableClasses, ExclusiveGroup, BreadcrumbForQuestId |
@@ -125,7 +125,7 @@
 | `questsort_dbc` | 18 | ID, SortName_Lang_* |
 
 ### NPC & Gossip
-| Tabelle | Spalten | Wichtige Felder |
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `npc_text` | 90 | ID, BroadcastTextID0-7, text0_0/text0_1 ... text7_0/text7_1 |
 | `npc_vendor` | 7 | entry, item, maxcount, incrtime, ExtendedCost |
@@ -134,23 +134,23 @@
 | `gossip_menu` | 2 | MenuID, TextID |
 | `gossip_menu_option` | 14 | MenuID, OptionID, OptionIcon, OptionText, ActionMenuID |
 
-### GameObject-System
-| Tabelle | Spalten | Wichtige Felder |
+### GameObject system
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `gameobject` | 21 | guid, id, map, position_x/y/z |
 | `gameobject_template` | 35 | entry, type, displayId, name, Data0-23, AIName, ScriptName |
 | `gameobject_loot_template` | 10 | Entry, Item, Chance, GroupId |
 
-### Map & Area
-| Tabelle | Spalten | Wichtige Felder |
+### Map & area
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `map_dbc` | 66 | ID, Directory, InstanceType, MapName_Lang_*, MapType |
 | `mapdifficulty_dbc` | 23 | ID, MapID, Difficulty, MaxPlayers |
 | `areatable_dbc` | 36 | ID, ContinentID, AreaName_Lang_*, Flags, AreaBit |
 | `worldmaparea_dbc` | 11 | ID, MapID, AreaID, AreaName |
 
-### Charakter & Klassen
-| Tabelle | Spalten | Wichtige Felder |
+### Character & classes
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `chrclasses_dbc` | 60 | ID, Name_Lang_*, DisplayPower, Flags |
 | `chrraces_dbc` | 69 | ID, Name_Lang_*, ClientFilestring, Alliance, BaseLanguage |
@@ -161,46 +161,46 @@
 | `player_race_stats` | 6 | Race, Strength, Agility, Stamina, Intellect, Spirit |
 | `player_xp_for_level` | 2 | Level, Experience |
 
-### Talent-System
-| Tabelle | Spalten | Wichtige Felder |
+### Talent system
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `talent_dbc` | 23 | ID, TabID, TierID, ColumnIndex, SpellRank_1-9 |
 | `talenttab_dbc` | 24 | ID, Name_Lang_*, ClassMask, BackgroundFile |
 | `skillline_dbc` | 56 | ID, CategoryID, SkillCostsID, Name_Lang_* |
 | `skilllineability_dbc` | 14 | ID, SkillLine, Spell, MinSkillLineRank, ClassMask |
 
-### Loot-System
-| Tabelle | Spalten | Wichtige Felder |
+### Loot system
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `creature_loot_template` | 10 | Entry, Item, Reference, Chance, QuestRequired, MinCount, MaxCount, GroupId |
-| `gameobject_loot_template` | 10 | (gleiche Struktur) |
-| `item_loot_template` | 10 | (gleiche Struktur) |
-| `fishing_loot_template` | 10 | (gleiche Struktur) |
-| `skinning_loot_template` | 10 | (gleiche Struktur) |
-| `pickpocketing_loot_template` | 10 | (gleiche Struktur) |
-| `milling_loot_template` | 10 | (gleiche Struktur) |
-| `prospecting_loot_template` | 10 | (gleiche Struktur) |
-| `disenchant_loot_template` | 10 | (gleiche Struktur) |
-| `reference_loot_template` | 10 | (gleiche Struktur) |
-| `mail_loot_template` | 10 | (gleiche Struktur) |
-| `spell_loot_template` | 10 | (gleiche Struktur) |
+| `gameobject_loot_template` | 10 | (same structure) |
+| `item_loot_template` | 10 | (same structure) |
+| `fishing_loot_template` | 10 | (same structure) |
+| `skinning_loot_template` | 10 | (same structure) |
+| `pickpocketing_loot_template` | 10 | (same structure) |
+| `milling_loot_template` | 10 | (same structure) |
+| `prospecting_loot_template` | 10 | (same structure) |
+| `disenchant_loot_template` | 10 | (same structure) |
+| `reference_loot_template` | 10 | (same structure) |
+| `mail_loot_template` | 10 | (same structure) |
+| `spell_loot_template` | 10 | (same structure) |
 
 ### Smart AI (SAI)
-| Tabelle | Spalten | Wichtige Felder |
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `smart_scripts` | 31 | entryorguid, source_type, id, link, event_type, event_phase_mask, event_param1-6, action_type, action_param1-6, target_type, target_param1-4, comment |
 | `conditions` | 15 | SourceTypeOrReferenceId, ConditionTypeOrReference, ConditionValue1-3, Comment |
 
-### Vehicle-System
-| Tabelle | Spalten | Wichtige Felder |
+### Vehicle system
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `vehicle_dbc` | 40 | ID, Flags, CameraFade*, CameraPitchOffset, CameraYawOffset |
 | `vehicleseat_dbc` | 58 | ID, Flags, AttachmentID, AttachmentOffset* |
 | `vehicle_accessory` | 7 | guid, accessory_entry, seat_id |
 | `vehicle_template_accessory` | 7 | entry, accessory_entry, seat_id |
 
-### Kampf & Stats
-| Tabelle | Spalten | Wichtige Felder |
+### Combat & stats
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `gtchancetomeleecrit_dbc` | 2 | ID, Data |
 | `gtchancetomeleecritbase_dbc` | 2 | ID, Data |
@@ -210,17 +210,17 @@
 | `gtregenhpperspt_dbc` | 2 | ID, Data |
 | `gtregenmpperspt_dbc` | 2 | ID, Data |
 | `scalingstatdistribution_dbc` | 22 | ID, StatID_1-10, Bonus_1-10 |
-| `scalingstatvalues_dbc` | 24 | ID, Charlevel, verschiedene Armor/DPS-Werte |
+| `scalingstatvalues_dbc` | 24 | ID, Charlevel, various Armor/DPS values |
 | `randproppoints_dbc` | 16 | ID, Epic_1-5, Superior_1-5, Good_1-5 |
 
-### Fraktionen
-| Tabelle | Spalten | Wichtige Felder |
+### Factions
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `faction_dbc` | 57 | ID, ReputationIndex, ReputationRaceMask, Name_Lang_*, Description_Lang_* |
 | `factiontemplate_dbc` | 14 | ID, Faction, Flags, FriendGroup, EnemyGroup, Enemies_1-4, Friend_1-4 |
 
-### Sonstige wichtige Tabellen
-| Tabelle | Spalten | Wichtige Felder |
+### Other important tables
+| Table | Columns | Important fields |
 |---------|---------|-----------------|
 | `battleground_template` | 13 | ID, MinPlayersPerTeam, MaxPlayersPerTeam, Comment |
 | `battlemasterlist_dbc` | 32 | ID, MapID_1-8, InstanceType |
