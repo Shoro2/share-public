@@ -1,44 +1,44 @@
-# 04 — AIO-Framework (Server↔Client UI-Kommunikation)
+# 04 — AIO framework (server↔client UI communication)
 
-AIO (Addon IO) ermöglicht es, Lua-Code vom Server an den WoW-Client zu senden und bidirektional zu kommunizieren. Damit lassen sich echte WoW-Frames bauen statt Gossip-Menüs.
+AIO (Addon IO) lets you send Lua code from the server to the WoW client and communicate bidirectionally. With it you can build real WoW frames instead of gossip menus.
 
-**Liegt im Repo:**
-- `share-public/AIO_Server/` → ins Server-`lua_scripts/`-Verzeichnis kopieren (Eluna lädt von dort)
-- `share-public/AIO_Client/` → in Client-`Interface/AddOns/AIO_Client/`
+**In the repo:**
+- `share-public/AIO_Server/` → copy into the server `lua_scripts/` directory (Eluna loads from there)
+- `share-public/AIO_Client/` → into the client `Interface/AddOns/AIO_Client/`
 
-Version 1.75. Beide Seiten teilen denselben `AIO.lua`-Code (~1300 Zeilen).
+Version 1.75. Both sides share the same `AIO.lua` code (~1300 lines).
 
-## Architektur-Übersicht
+## Architecture overview
 
 ```
-Server (Eluna)                     Client (WoW Addon)
+Server (Eluna)                     Client (WoW addon)
    |                                   |
    +-- AIO.AddAddon("file.lua")        |
-   |   sendet Code an Client  ─────────+→ loadstring()() führt aus
+   |   sends code to the client ──────+→ loadstring()() executes
    +-- AIO.AddOnInit(func)             |
-   |   Initial-Daten bei Login         |
-   +-- AIO.Msg():Add():Send(player) ───+→ Handler aufgerufen
-   +-- Handler aufgerufen ←────────────+── AIO.Msg():Add():Send()
+   |   initial data on login           |
+   +-- AIO.Msg():Add():Send(player) ───+→ handler called
+   +-- handler called ←────────────────+── AIO.Msg():Add():Send()
 ```
 
-## Schlüssel-APIs
+## Key APIs
 
-| Funktion | Seite | Zweck |
+| Function | Side | Purpose |
 |----------|-------|-------|
-| `AIO.AddAddon([path, name])` | Server | Datei zum Senden registrieren |
-| `AIO.AddHandlers(name, table)` | beide | Handler-Funktionen registrieren |
-| `AIO.Msg()` | beide | Nachricht erstellen |
-| `msg:Add(name, handler, ...)` | beide | Handler-Aufruf anhängen |
-| `msg:Send(player)` / `msg:Send()` | Server / Client | Senden |
-| `AIO.Handle(player, name, handler, ...)` | Server | Shorthand Msg+Add+Send |
-| `AIO.Handle(name, handler, ...)` | Client | Shorthand |
-| `AIO.AddOnInit(func)` | Server | Hook für Login-Nachricht |
-| `AIO.SavePosition(frame, char)` | Client | Frame-Position speichern |
-| `AIO.AddSavedVar(key)` / `AddSavedVarChar(key)` | Client | Account/Char-Variablen |
+| `AIO.AddAddon([path, name])` | server | register a file to send |
+| `AIO.AddHandlers(name, table)` | both | register handler functions |
+| `AIO.Msg()` | both | create a message |
+| `msg:Add(name, handler, ...)` | both | append a handler call |
+| `msg:Send(player)` / `msg:Send()` | server / client | send |
+| `AIO.Handle(player, name, handler, ...)` | server | shorthand Msg+Add+Send |
+| `AIO.Handle(name, handler, ...)` | client | shorthand |
+| `AIO.AddOnInit(func)` | server | hook for the login message |
+| `AIO.SavePosition(frame, char)` | client | save frame position |
+| `AIO.AddSavedVar(key)` / `AddSavedVarChar(key)` | client | account/char variables |
 
-## Handler-Pattern (WICHTIG)
+## Handler pattern (IMPORTANT)
 
-`AIO.AddHandlers()` wrappt alle Handler-Funktionen so:
+`AIO.AddHandlers()` wraps every handler function like this:
 
 ```lua
 local function handler(player, key, ...)
@@ -48,39 +48,39 @@ local function handler(player, key, ...)
 end
 ```
 
-→ **`player` ist IMMER das erste Argument** in JEDEM Handler — auf Server **und** Client.
+→ **`player` is ALWAYS the first argument** in EVERY handler — on server **and** client.
 
-| Seite | Was ist `player`? |
+| Side | What is `player`? |
 |-------|-------------------|
-| Server | Eluna Player-Userdata (`:GetName()`, `:Teleport()`, ...) |
-| Client | String mit Spielername (aus `UnitName("player")`) — **nicht nil!** |
+| Server | Eluna player userdata (`:GetName()`, `:Teleport()`, ...) |
+| Client | string with the player's name (from `UnitName("player")`) — **not nil!** |
 
-Korrektes Pattern:
+Correct pattern:
 
 ```lua
 -- Server
 ServerHandlers.StartChallenge = function(player, mapId, difficulty)
-    -- player = Eluna Player
+    -- player = Eluna player
 end
 
 -- Client
 ClientHandlers.InitDungeon = function(player, mapId, name, timerMin, bossCount)
-    -- player = String, NICHT ignorieren!
+    -- player = string, do NOT ignore it!
 end
 ```
 
-## Re-Registrierungs-Falle
+## Re-registration trap
 
-`AIO.AddHandlers` hat einen `assert`, der zweimaliges Registrieren desselben Handler-Namens blockiert. Wenn AIO Code ein zweites Mal an den Client schickt (z.B. nach Code-Änderung), schlägt der zweite `loadstring()()`-Aufruf am `AIO.AddHandlers` fehl. Folge: alte Closure-Variablen bleiben aktiv, neue werden nie erreicht.
+`AIO.AddHandlers` has an `assert` that blocks registering the same handler name twice. If AIO sends code to the client a second time (e.g. after a code change), the second `loadstring()()` call fails at `AIO.AddHandlers`. Consequence: old closure variables stay active, new ones are never reached.
 
-**Workaround — globale Handler-Tabelle:**
+**Workaround — global handler table:**
 
 ```lua
 if not MY_Handlers then MY_Handlers = {} end
 
--- Funktionen in-place ersetzen (neue Closure über aktuelle Locals)
+-- Replace functions in place (new closure over the current locals)
 MY_Handlers.MyFunc = function(player, ...)
-    -- referenziert AKTUELLE locals
+    -- references CURRENT locals
 end
 
 if not MY_HandlersRegistered then
@@ -89,94 +89,94 @@ if not MY_HandlersRegistered then
 end
 ```
 
-Funktioniert weil der AIO-Wrapper eine Referenz auf das **Tabellen-Objekt** hält, nicht eine Kopie der Funktionen.
+Works because the AIO wrapper holds a reference to the **table object**, not a copy of the functions.
 
-## Nachrichten-Limits
+## Message limits
 
-| Richtung | Max Paketgröße | Transport |
+| Direction | Max packet size | Transport |
 |----------|---------------|-----------|
-| Server → Client | 2560 Bytes | Eluna `CHAT_MSG_ADDON` |
-| Client → Server | 255 Bytes | `SendAddonMessage(prefix, msg, "WHISPER", UnitName("player"))` |
+| Server → Client | 2560 bytes | Eluna `CHAT_MSG_ADDON` |
+| Client → Server | 255 bytes | `SendAddonMessage(prefix, msg, "WHISPER", UnitName("player"))` |
 
-- Lange Nachrichten werden serverseitig gesplittet und clientseitig reassembliert.
-- Unvollständige Nachrichten verfallen nach 15 s. Memory-Limit: 500 KB pro Spieler.
-- **Max 15 Argumente pro `msg:Add()` Block** auf Server-Seite.
+- Long messages are split server-side and reassembled client-side.
+- Incomplete messages expire after 15 s. Memory limit: 500 KB per player.
+- **Max 15 arguments per `msg:Add()` block** on the server side.
 
-## Code-Caching & CRC32
+## Code caching & CRC32
 
 ```
 Server: AIO.AddAddon("file.lua")
-   → Code lesen → LuaSrcDiet (optional Minify) → LZW komprimieren → CRC32
-   → in AIO_ADDONSORDER speichern: {name, crc, code}
+   → read code → LuaSrcDiet (optional minify) → LZW compress → CRC32
+   → store in AIO_ADDONSORDER: {name, crc, code}
 
-Client Login
-   → sendet {addon_name → crc} aller gecachten Addons
-Server vergleicht
-   ├─ CRC stimmt → nicht senden (Bandbreite sparen)
-   └─ CRC anders → neuen Code senden → Client aktualisiert AIO_sv_Addons
+Client login
+   → sends {addon_name → crc} of all cached addons
+Server compares
+   ├─ CRC matches → do not send (saves bandwidth)
+   └─ CRC differs → send new code → client updates AIO_sv_Addons
 ```
 
-SavedVariables auf Client:
+SavedVariables on the client:
 
-| Variable | Scope | Inhalt |
+| Variable | Scope | Contents |
 |----------|-------|--------|
-| `AIO_sv` | Account | `AIO.AddSavedVar(key)` Variablen |
-| `AIO_sv_char` | Character | `AIO.AddSavedVarChar(key)` Variablen |
-| `AIO_sv_Addons` | Account | Cache `{name → {name, crc, code}}` |
+| `AIO_sv` | account | `AIO.AddSavedVar(key)` variables |
+| `AIO_sv_char` | character | `AIO.AddSavedVarChar(key)` variables |
+| `AIO_sv_Addons` | account | cache `{name → {name, crc, code}}` |
 
-## Initialisierungs-Ablauf (Client)
+## Initialization flow (client)
 
 ```
 ADDON_LOADED("AIO_Client")
-  1. SavedVars laden, _G[] wiederherstellen
-  2. CRC-Hashes aller Addons sammeln
-  3. Init senden: AIO.Msg():Add("AIO", "Init", VERSION, {name→crc})
-     (1s Initialdelay, 1.5x Backoff bis AIO_INITED)
-  →  Server antwortet
-     ├─ neue/geänderte Addons → in AIO_sv_Addons schreiben
-     ├─ gecachte Addons → aus Cache lesen
-     └─ alle in Reihenfolge ausführen via RunAddon(name):
-        Code aus Cache → ggf. LZW dekomprimieren → loadstring(code, name)()
+  1. load SavedVars, restore _G[]
+  2. collect CRC hashes of all addons
+  3. send Init: AIO.Msg():Add("AIO", "Init", VERSION, {name→crc})
+     (1s initial delay, 1.5x backoff until AIO_INITED)
+  →  server replies
+     ├─ new/changed addons → write to AIO_sv_Addons
+     ├─ cached addons → read from cache
+     └─ run all in order via RunAddon(name):
+        code from cache → optional LZW decompress → loadstring(code, name)()
   AIO_INITED = true
 ```
 
-## Force-Reload / Reset
+## Force reload / reset
 
-| Befehl | Wirkung |
+| Command | Effect |
 |--------|---------|
-| `AIO.Handle(player, "AIO", "ForceReload")` | unsichtbarer Vollbild-Button → Klick triggert `ReloadUI()` |
-| `AIO.Handle(player, "AIO", "ForceReset")` | Cache leeren + ForceReload |
-| `/aio reset` (Client) | manuell Addon-Cache leeren |
-| `/aio version` | Version anzeigen |
-| `/aio help` | Befehle |
+| `AIO.Handle(player, "AIO", "ForceReload")` | invisible full-screen button → click triggers `ReloadUI()` |
+| `AIO.Handle(player, "AIO", "ForceReset")` | clear cache + ForceReload |
+| `/aio reset` (client) | manually clear the addon cache |
+| `/aio version` | show version |
+| `/aio help` | commands |
 
-## AIO-Datei-Struktur eines Custom-Moduls
+## AIO file structure of a custom module
 
 ```
 lua_scripts/
 ├── AIO.lua, queue.lua, bit53.lua, LibCompress.lua,
-│   lualzw-zeros/, Dep_Smallfolk/, Dep_LuaSrcDiet/, Dep_crc32lua/   ← AIO Framework
-├── my_addon_server.lua    # Eluna-Server-Script + AIO.AddAddon()
-└── my_addon_client.lua    # Client-UI (per AIO an WoW-Client gesendet)
+│   lualzw-zeros/, Dep_Smallfolk/, Dep_LuaSrcDiet/, Dep_crc32lua/   ← AIO framework
+├── my_addon_server.lua    # Eluna server script + AIO.AddAddon()
+└── my_addon_client.lua    # client UI (sent to the WoW client via AIO)
 ```
 
-## Praxistipps
+## Practical tips
 
-- **Tabellen als Argumente** funktionieren (Smallfolk serialisiert), aber bei vielen Items besser **flach senden** (1 AIO.Handle pro Eintrag) wegen Paket-Limits.
-- **Nicht in OnInit feuern, was ein Player-Objekt verlangt** — beim allerersten Login ist das Player-Objekt noch nicht "ready". `OnLogin` ist sicherer.
-- **`AIO.AddAddon()` am Anfang der Client-Datei** mit Early-Return:
+- **Tables as arguments** work (Smallfolk serializes them), but with many items prefer **flat sending** (1 AIO.Handle per entry) due to packet limits.
+- **Do not fire something requiring a player object in OnInit** — on the very first login the player object is not yet "ready". `OnLogin` is safer.
+- **`AIO.AddAddon()` at the top of the client file** with an early return:
   ```lua
   if AIO.AddAddon() then return end
-  -- ... Client-Code ...
+  -- ... client code ...
   ```
-  → Server-Pfad: AddAddon registriert die Datei und returns true → kein UI-Code wird auf Server ausgeführt.
-- **Item-Info-Cache**: `GetItemInfo()` ist auf Client async. Bei Frame-Render einen Retry-Timer einplanen (siehe mod-endless-storage `endless_storage_client.lua`).
+  → Server path: AddAddon registers the file and returns true → no UI code is run on the server.
+- **Item info cache**: `GetItemInfo()` is async on the client. Plan a retry timer for frame render (see mod-endless-storage `endless_storage_client.lua`).
 
-## Beispiel — minimale Round-Trip-UI
+## Example — minimal round-trip UI
 
 ```lua
 -- server.lua (Eluna)
-AIO.AddAddon()  -- ohne args → diese Datei wird nicht zum Client geschickt
+AIO.AddAddon()  -- without args → this file is not sent to the client
 AIO.AddHandlers("MyMod", {
     HelloFromClient = function(player, msg)
         player:SendBroadcastMessage("Server got: " .. tostring(msg))
