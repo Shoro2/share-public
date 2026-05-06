@@ -98,56 +98,21 @@
 
 DB-callback helpers: `HandleLoadActionsSwitchSpec` (`:588`), `HandleCharacterAuraFrozen` (`:599`).
 
-## Opcodes covered (highlights)
+## Opcodes covered
 
-Source for status/processing: `Opcodes.cpp` (`139`–`1410`).
+The "Critical files (grouped)" table above already maps every opcode to its handler — see `Opcodes.cpp:139`–`1410` for status/processing. Notable status assignments:
 
-| Opcode | Status | Handler | Purpose |
-|---|---|---|---|
-| `CMSG_REPOP_REQUEST` (`0x15A`) | LOGGEDIN/THREADSAFE | `HandleRepopRequestOpcode` | Release spirit. |
-| `CMSG_RESURRECT_RESPONSE` (`0x15C`) | LOGGEDIN/THREADSAFE | `HandleResurrectResponseOpcode` | Accept resurrection offer. |
-| `CMSG_RECLAIM_CORPSE` (`0x1D2`) | LOGGEDIN/THREADSAFE | `HandleReclaimCorpseOpcode` | Run-back to corpse, accept resurrection. |
-| `CMSG_AREA_SPIRIT_HEALER_QUERY/QUEUE` (`0x2E2`/`0x2E3`) | LOGGEDIN/THREADUNSAFE | `HandleAreaSpiritHealer*` | BG / world spirit healer queue. |
-| `CMSG_HEARTH_AND_RESURRECT` (`0x49C`) | LOGGEDIN/THREADSAFE | `HandleHearthAndResurrect` | Hearthstone-and-resurrect (Wintergrasp etc.). |
-| `CMSG_LOGOUT_REQUEST` (`0x04B`) | LOGGEDIN/THREADUNSAFE | `HandleLogoutRequestOpcode` | Begin logout. |
-| `CMSG_LOGOUT_CANCEL` (`0x04E`) | LOGGEDIN_OR_RECENTLY_LOGGOUT/THREADUNSAFE | `HandleLogoutCancelOpcode` | Abort logout. |
-| `CMSG_GOSSIP_SELECT_OPTION` (`0x17C`) | LOGGEDIN/THREADUNSAFE | `HandleGossipSelectOptionOpcode` | Pick a gossip option. |
-| `CMSG_WHO` (`0x062`) | LOGGEDIN/THREADSAFE | `HandleWhoOpcode` | `/who` query. |
-| `CMSG_WHOIS` (`0x064`) | LOGGEDIN/THREADUNSAFE | `HandleWhoisOpcode` | GM-only `.whois`. |
-| `CMSG_INSPECT` (`0x114`) | LOGGEDIN/INPLACE | `HandleInspectOpcode` | Inspect gear & talents. |
-| `MSG_INSPECT_HONOR_STATS` (`0x2D6`) | LOGGEDIN/INPLACE | `HandleInspectHonorStatsOpcode` | Inspect honor stats. |
-| `CMSG_QUERY_INSPECT_ACHIEVEMENTS` (`0x46B`) | LOGGEDIN/INPLACE | `HandleQueryInspectAchievements` | Inspect achievements. |
-| `CMSG_AREATRIGGER` (`0x0B4`) | LOGGEDIN/INPLACE | `HandleAreaTriggerOpcode` | Stepped into area trigger (tavern, instance entry, quest). |
-| `CMSG_ZONEUPDATE` (`0x1F4`) | LOGGEDIN/INPLACE | `HandleZoneUpdateOpcode` | Client-reported zone change. |
-| `CMSG_SET_SELECTION` (`0x13D`) | LOGGEDIN/THREADSAFE | `HandleSetSelectionOpcode` | Change current target. |
-| `CMSG_STANDSTATECHANGE` (`0x101`) | LOGGEDIN/THREADUNSAFE | `HandleStandStateChangeOpcode` | Sit / stand. |
-| `CMSG_TOGGLE_PVP` (`0x253`) | LOGGEDIN/THREADUNSAFE | `HandleTogglePvP` | `/pvp`. |
-| `CMSG_SET_ACTION_BUTTON` (`0x128`) | LOGGEDIN/THREADUNSAFE | `HandleSetActionButtonOpcode` | Bind a slot. |
-| `CMSG_SET_ACTIONBAR_TOGGLES` (`0x2BF`) | AUTHED/THREADUNSAFE | `HandleSetActionBarToggles` | Save bar visibility. |
-| `CMSG_REQUEST_ACCOUNT_DATA` (`0x20A`) | AUTHED/THREADUNSAFE | `HandleRequestAccountData` | Cloud-sync read. |
-| `CMSG_UPDATE_ACCOUNT_DATA` (`0x20B`) | AUTHED/THREADUNSAFE | `HandleUpdateAccountData` | Cloud-sync write (zlib payload). |
-| `CMSG_READY_FOR_ACCOUNT_DATA_TIMES` (`0x4FF`) | AUTHED/THREADUNSAFE | `HandleReadyForAccountDataTimes` | Char-screen handshake. |
-| `CMSG_BUG` (`0x1CA`) | LOGGEDIN/THREADUNSAFE | `HandleBugOpcode` | `/bug`. |
-| `CMSG_COMPLAIN` (`0x3C7`) | LOGGEDIN/THREADUNSAFE | `HandleComplainOpcode` | Spam report. |
-| `CMSG_PLAYED_TIME` (`0x1CC`) | LOGGEDIN/INPLACE | `HandlePlayedTime` | `/played`. |
-| `CMSG_FAR_SIGHT` (`0x27A`) | LOGGEDIN/THREADUNSAFE | `HandleFarSightOpcode` | Eye of Kilrogg / Eyes of the Beast / spectator. |
-| `CMSG_SET_TITLE` (`0x374`) | LOGGEDIN/INPLACE | `HandleSetTitleOpcode` | Set chosen title. |
-| `CMSG_CANCEL_MOUNT_AURA` (`0x375`) | LOGGEDIN/INPLACE | `HandleCancelMountAuraOpcode` | Dismount. |
-| `CMSG_REALM_SPLIT` (`0x38C`) | AUTHED/THREADUNSAFE | `HandleRealmSplitOpcode` | "Realm split" announcement reply. |
-| `CMSG_REQUEST_PET_INFO` (`0x279`) | LOGGEDIN/THREADUNSAFE | `HandleRequestPetInfo` | Pet name / spell list. |
-| `CMSG_SET_TAXI_BENCHMARK_MODE` (`0x389`) | LOGGEDIN/THREADUNSAFE | `HandleSetTaxiBenchmarkOpcode` | Toggle the taxi-bench mode. |
-| `CMSG_RESET_INSTANCES` (`0x31D`) | LOGGEDIN/THREADUNSAFE | `HandleResetInstancesOpcode` | `/reset`-from-bind-list. |
-| `MSG_SET_DUNGEON_DIFFICULTY` (`0x329`) | LOGGEDIN/THREADUNSAFE | `HandleSetDungeonDifficultyOpcode` | Switch normal/heroic. |
-| `MSG_SET_RAID_DIFFICULTY` (`0x4EB`) | LOGGEDIN/THREADUNSAFE | `HandleSetRaidDifficultyOpcode` | Switch 10/25 N/H. |
-| `CMSG_INSTANCE_LOCK_RESPONSE` (`0x13F`) | LOGGEDIN/THREADUNSAFE | `HandleInstanceLockResponse` | Accept/decline instance lock. |
-| `CMSG_NEXT_CINEMATIC_CAMERA` (`0x0FB`) | LOGGEDIN/THREADSAFE | `HandleNextCinematicCamera` | Cinematic step. |
-| `CMSG_COMPLETE_CINEMATIC` (`0x0FC`) | LOGGEDIN/THREADSAFE | `HandleCompleteCinematic` | End-of-cinematic. |
-| `CMSG_WORLD_TELEPORT` (`0x008`) | LOGGEDIN/THREADUNSAFE | `HandleWorldTeleportOpcode` | GM-tele coords. |
-| `CMSG_WORLD_STATE_UI_TIMER_UPDATE` (`0x4F6`) | LOGGEDIN/INPLACE | `HandleWorldStateUITimerUpdate` | World-state-bar timer. |
-| `CMSG_UPDATE_MISSILE_TRAJECTORY` (`0x462`) | LOGGEDIN/THREADUNSAFE | `HandleUpdateMissileTrajectory` | Spell projectile correction. |
-| `CMSG_MOVE_HOVER_ACK` (`0x0F6`), `_WATER_WALK_ACK` (`0x2D0`), `_FEATHER_FALL_ACK` (`0x2CF`), `_GRAVITY_DISABLE/ENABLE_ACK` (`0x4CF`/`0x4D1`), `MOVE_SET_CAN_FLY_ACK` (`0x345`) | LOGGEDIN/THREADSAFE | `HandleMoveFlagChangeOpcode` | Generic movement-flag ACKs. |
+- `STATUS_AUTHED` (allowed at char screen): `CMSG_REQUEST_ACCOUNT_DATA`, `CMSG_UPDATE_ACCOUNT_DATA`, `CMSG_READY_FOR_ACCOUNT_DATA_TIMES`, `CMSG_REALM_SPLIT`, `CMSG_SET_ACTIONBAR_TOGGLES`.
+- `STATUS_LOGGEDIN_OR_RECENTLY_LOGGOUT`: `CMSG_LOGOUT_CANCEL` only — handles in-flight cancel after `_player` was nulled.
+- All others: `STATUS_LOGGEDIN`.
 
-For the canonical opcode list with hex values: [`../network/03-opcodes.md`](../network/03-opcodes.md).
+Notable threading:
+
+- `PROCESS_THREADSAFE` (run inside `Map::Update`): `CMSG_REPOP_REQUEST`, `CMSG_RESURRECT_RESPONSE`, `CMSG_RECLAIM_CORPSE`, `CMSG_HEARTH_AND_RESURRECT`, `CMSG_WHO`, `CMSG_SET_SELECTION`, `CMSG_NEXT_CINEMATIC_CAMERA`, `CMSG_COMPLETE_CINEMATIC`, all `CMSG_MOVE_*_ACK` flag opcodes routed to `HandleMoveFlagChangeOpcode`.
+- `PROCESS_THREADUNSAFE` (run inside `World::UpdateSessions`): logout, gossip select, account data, instance difficulty, far-sight, world teleport, complain, who-is, request-pet-info, missile trajectory.
+- `PROCESS_INPLACE`: inspect, query achievements, area trigger, zone update, set title, played time, world-state UI timer, cancel-mount-aura.
+
+For the canonical opcode list with hex values and exact status/processing per slot: [`../network/03-opcodes.md`](../network/03-opcodes.md).
 
 ## Key concepts
 
