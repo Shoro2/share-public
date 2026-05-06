@@ -22,7 +22,7 @@
 | `src/server/shared/Packets/ByteBuffer.h:494` | `void appendPackXYZ(float, float, float)` — `MSG_MOVE`-style packed coordinate |
 | `src/server/shared/Packets/ByteBuffer.h:503` | `void appendPackGUID(uint64)` |
 | `src/server/shared/Packets/ByteBuffer.h:524` | `void AppendPackedTime(time_t)` (calendar / mail timestamps) |
-| `src/server/shared/Packets/ByteBuffer.h:526` | `void put(pos, src, cnt)` — overwrite range without moving `_wpos` |
+| `src/server/shared/Packets/ByteBuffer.h:525` | `void put(pos, src, cnt)` — overwrite range without moving `_wpos` |
 | `src/server/shared/Packets/ByteBuffer.cpp:30` | `ByteBufferPositionException::ByteBufferPositionException` (formats message) |
 | `src/server/shared/Packets/ByteBuffer.cpp:77` | `ReadCString` impl (UTF-8 validated via `utf8::is_valid`) |
 | `src/server/shared/Packets/ByteBuffer.cpp:110` | `append(uint8 const*, std::size_t)` — the only re-allocator (custom growth tiers) |
