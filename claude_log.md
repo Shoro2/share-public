@@ -6,6 +6,34 @@ This document is the central history of all work steps, changes, and plans in th
 
 ## Change history
 
+### 2026-05-06
+
+#### [share-public] Phase 1: AzerothCore engine reference skeleton (`docs/core/`)
+
+- **Timestamp**: 2026-05-06
+- **Repo**: share-public
+- **Branch**: `claude/document-azerothcore-wotlk-qay3H`
+- **Context**: There was no AI-friendly reference for the **AzerothCore engine itself**. The existing `docs/01–10` and `docs/custom-spells/` cover this fork's customizations (modules, custom IDs, AIO, custom spells); `azerothcore-wotlk/{INDEX,CLAUDE,functions,data_structure}.md` are short and pragmatic; the upstream wiki + Doxygen are external (and currently blocked from automated WebFetch via Cloudflare). This made answering "where is X implemented in the core?" expensive — every session had to grep ~1.4k source files. Phase 1 lays the **navigation skeleton** for a wiki + signpost tree under `docs/core/`. Topic content is filled in per-subsystem in Phase 2.
+- **Plan reference**: `/root/.claude/plans/erstelle-im-repo-share-public-dynamic-horizon.md`
+- **Changes**:
+  - Created `docs/core/` with 5 top-level files and 19 subsystem subfolders, each with a `00-index.md`. Total: **25 small Markdown files**, all under 12 KB (largest 117 lines / ~6 KB).
+  - **Top level**:
+    - `00-INDEX.md` — master signpost: by-question table (FAQ → file path) + by-subsystem table (folder → 1-line description).
+    - `01-overview.md` — 30k-foot view: 2 processes, 3 DBs, startup sequence, world tick, layered code map, fork-specific additions.
+    - `02-glossary.md` — engine terminology (Aura, Cell, DBC, Grid, MotionMaster, ObjectGuid, ScriptMgr, SRP6, WorldPacket, …).
+    - `03-file-locator.md` — alphabetical reverse lookup: source-file path → doc page.
+    - `04-reading-strategy.md` — navigation rules for AI sessions, two-step lookup, topic-file shape, redundancy avoidance, external-doc table, file-size guardrails.
+  - **Subfolders** (each `00-index.md` lists planned topic files + critical engine files + cross-refs to existing project docs / fork docs / Doxygen): `architecture/`, `database/`, `dbc/`, `network/`, `entities/`, `spells/`, `maps/`, `movement/`, `combat/`, `ai/`, `scripting/`, `handlers/`, `instances/`, `battlegrounds/`, `loot/`, `quests/`, `social/`, `world/`, `server-apps/`, `tools/`.
+- **Redundancy strategy**: every existing project doc (`docs/01-…` through `docs/10-…`, `docs/custom-spells/`, `azerothcore-wotlk/{functions,data_structure,doc/Logging,doc/ConfigPolicy}.md`) is listed in `04-reading-strategy.md` as the canonical home for its topic. The `core/` tree links to them; it does not restate them. The user-facing spell-author view stays in `docs/03-spell-system.md`; `core/spells/` is the engine-implementation view.
+- **External docs**: direct WebFetch to `azerothcore.org/wiki/*` and `azerothcore.org/pages/doxygen/*` returned 403 (Cloudflare). Canonical wiki URLs were extracted from local code references and mapped to `core/` subsystems in `04-reading-strategy.md` for use as cross-link targets in Phase 2.
+- **Affected files**:
+  - `share-public/docs/core/00-INDEX.md`, `01-overview.md`, `02-glossary.md`, `03-file-locator.md`, `04-reading-strategy.md` (NEW)
+  - `share-public/docs/core/{architecture,database,dbc,network,entities,spells,maps,movement,combat,ai,scripting,handlers,instances,battlegrounds,loot,quests,social,world,server-apps,tools}/00-index.md` (NEW × 19)
+  - `share-public/AI_GUIDE.md` (extended "Where do I find what?" with a row pointing to `docs/core/00-INDEX.md`)
+  - `share-public/CLAUDE.md` (extended doc index with a row pointing to `docs/core/00-INDEX.md`)
+  - `share-public/claude_log.md` (this entry)
+- **Next steps (Phase 2)**: fill topic files (`01-…`, `02-…`, …) per subsystem, one PR each, in priority order: `database/`, `scripting/` + `handlers/00-index.md`, `entities/`, `network/`, `dbc/`, `spells/` (engine), `maps/`/`movement/`/`combat/`/`ai/`, then the remainder.
+
 ### 2026-05-01
 
 #### [mod-ale] Onboarding: per-repo doc convention applied to the new repo

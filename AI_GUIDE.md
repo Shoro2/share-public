@@ -44,6 +44,7 @@ Other repos referenced from the code that are **not in scope here**: `mod-custom
 | Client DBC files (246 of them) | `dbc/` (binary) |
 | Full change history | `claude_log.md` |
 | Detailed Custom Spells review | `claude_log_2026-04-27_custom_spells_review.md` |
+| **AzerothCore engine internals & interfaces** (Map/Grid, Spell/Aura engine, DB pool, DBC loader, opcodes, hooks, …) | [`docs/core/00-INDEX.md`](./docs/core/00-INDEX.md) |
 
 ## Reading strategy for AI tools (IMPORTANT)
 

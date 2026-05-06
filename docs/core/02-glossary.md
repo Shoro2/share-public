@@ -1,0 +1,109 @@
+# core/02 — Glossary
+
+> Compact glossary of engine terms used across this tree. Each entry points to the topic file where the concept is documented in depth. Short definitions only — for usage and code paths follow the link.
+
+## A
+
+- **AIO** — RPC-style server↔client framework on top of `mod-ale` (Eluna fork) plus a WoW addon. Details: [`../04-aio-framework.md`](../04-aio-framework.md). Outside the C++ core.
+- **`AddSC_*`** — Function name for an in-tree script registration entry point (declared from `ScriptLoader.cpp`). For modules the analogue is `Add<modulename>Scripts()`. See [`scripting/05-module-discovery.md`](./scripting/05-module-discovery.md).
+- **ARC4** — Stream cipher used to obfuscate the `WorldSocket` traffic after auth. See [`network/04-worldsocket.md`](./network/04-worldsocket.md).
+- **`Aura`** / **`AuraEffect`** / **`AuraApplication`** — A buff/debuff has one `Aura` per (caster, target, spellId), one `AuraEffect` per effect index, and one `AuraApplication` per target the aura is applied on. See [`spells/03-aura-system.md`](./spells/03-aura-system.md).
+- **`AuthSession`** — `authserver`-side session that runs the SRP6 handshake. See [`network/06-auth-srp6.md`](./network/06-auth-srp6.md).
+
+## B
+
+- **`Battleground` / `BattlegroundMap`** — A `BattlegroundMap` is a transient `Map` instance owned by a `Battleground`. The latter manages teams, queue, score, events. See [`battlegrounds/00-index.md`](./battlegrounds/00-index.md).
+- **`ByteBuffer`** — Binary serialization primitive used by every packet. Provides typed `<<` / `>>` operators. See [`network/01-bytebuffer.md`](./network/01-bytebuffer.md).
+
+## C
+
+- **Cell** — A `Map` is split into an 8×8 grid of cells per `Grid`. Object-to-cell math is in `GridDefines.h`. See [`maps/03-grids-cells.md`](./maps/03-grids-cells.md).
+- **`Creature`** — Unit subclass for NPCs. Backed by `creature_template` + `creature` (spawn) DB rows. See [`entities/05-creature.md`](./entities/05-creature.md).
+- **`CreatureAI`** — Abstract AI base. Concrete kinds: `ScriptedAI` (one `.cpp` per boss), `SmartAI` (data-driven via `smart_scripts`), `PetAI`. See [`ai/`](./ai/00-index.md).
+
+## D
+
+- **DBC** — Binary "Database for Client" file shipped with WoW 3.3.5a. Loaded at startup into typed `DBCStorage<T>` instances. See [`dbc/`](./dbc/00-index.md).
+- **DBC override** — DB tables (e.g. `spell_dbc`, `spellitemenchantment_dbc`) that the loader merges over the binary DBC at startup. See [`dbc/06-db-overrides.md`](./dbc/06-db-overrides.md), [`../03-spell-system.md#dbc-override-via-db`](../03-spell-system.md).
+- **`DatabaseEnv.h`** — Header that exposes the three global pools `WorldDatabase`, `CharacterDatabase`, `LoginDatabase`. See [`database/01-database-env.md`](./database/01-database-env.md).
+
+## E
+
+- **Entity** — Generic term for anything inheriting `Object`. Covers `Player`, `Creature`, `GameObject`, `Item`, `Pet`, `Vehicle`, `Corpse`, `DynamicObject`, `Transport`. See [`entities/01-object-hierarchy.md`](./entities/01-object-hierarchy.md).
+
+## G
+
+- **`GameObject`** — Static or interactive world object (chest, door, transport, fishing bobber, …). Backed by `gameobject_template` + `gameobject` DB rows. See [`entities/06-gameobject.md`](./entities/06-gameobject.md).
+- **Grid** — A `Map` subdivision (`MAX_NUMBER_OF_GRIDS = 64`) that owns its objects, NPCs and updates. Loaded on demand. See [`maps/03-grids-cells.md`](./maps/03-grids-cells.md), [`maps/04-grid-loading.md`](./maps/04-grid-loading.md).
+- **`ObjectGuid`** — 64-bit packed ID with `HighGuid` type (Player, Creature, Item, …) + counter. See [`entities/02-object-guid.md`](./entities/02-object-guid.md).
+
+## H
+
+- **Hook** — A function on a `ScriptObject` subclass (`PlayerScript`, `UnitScript`, `WorldScript`, `CreatureScript`, …) that the engine calls on a defined event. See [`scripting/02-hook-classes.md`](./scripting/02-hook-classes.md).
+
+## I
+
+- **Instance** — A copy of a `Map` shared by exactly one party/raid (or BG team). Saved progress lives in `InstanceSave`. See [`instances/`](./instances/00-index.md).
+- **`InstanceScript`** — Per-instance state machine for boss progress, achievement criteria, scripted events. See [`scripting/04-instance-scripts.md`](./scripting/04-instance-scripts.md).
+
+## L
+
+- **`LFG`** — Looking-For-Group / Dungeon Finder. Managed by `LFGMgr`. See [`instances/04-dungeon-finder.md`](./instances/04-dungeon-finder.md).
+- **Loot store** — Typed loot table category (`LootTemplates_Creature`, `LootTemplates_Gameobject`, …). Defined in `LootMgr.h`. See [`loot/01-loot-store.md`](./loot/01-loot-store.md).
+
+## M
+
+- **`Map`** — Logical world map (continent, dungeon, BG). One `Map` instance per running copy. See [`maps/01-map-hierarchy.md`](./maps/01-map-hierarchy.md).
+- **`MapMgr`** — Allocates/destroys `Map` instances and dispatches updates. See [`maps/02-map-mgr.md`](./maps/02-map-mgr.md).
+- **MMaps** — Detour navigation meshes generated by `mmaps_generator`. Used by `PathGenerator`. See [`maps/06-mmaps.md`](./maps/06-mmaps.md), [`movement/04-pathfinder.md`](./movement/04-pathfinder.md).
+- **`MotionMaster`** — Stack of `MovementGenerator` slots that drive a `Unit`'s movement. See [`movement/01-motion-master.md`](./movement/01-motion-master.md).
+- **`MoveSpline`** — Server-authoritative spline interpolator that mirrors the client's path. See [`movement/03-spline.md`](./movement/03-spline.md).
+
+## O
+
+- **`Object`** — Root class of all in-world entities. Owns `m_uint32Values` (update fields). See [`entities/01-object-hierarchy.md`](./entities/01-object-hierarchy.md), [`entities/03-update-fields.md`](./entities/03-update-fields.md).
+- **`ObjectMgr`** — Singleton that loads and caches `creature_template`, `gameobject_template`, `quest_template`, gossip, locales, and many more world-DB tables. See [`entities/10-object-mgr.md`](./entities/10-object-mgr.md).
+- **Opcode** — 16-bit message ID exchanged with the client. `CMSG_*` = client→server, `SMSG_*` = server→client, `MSG_*` = bidirectional. See [`network/03-opcodes.md`](./network/03-opcodes.md).
+
+## P
+
+- **`Player`** — Unit subclass for connected accounts; ~3 kLOC header. See [`entities/04-player.md`](./entities/04-player.md).
+- **Prepared statement** — Parameterized query bound to a per-DB enum (`CHAR_SEL_*`, `WORLD_INS_*`, `LOGIN_UPD_*`). See [`database/02-prepared-statements.md`](./database/02-prepared-statements.md).
+- **Proc** — Aura-driven trigger (e.g. "on melee crit, cast spell X"). Routed by `ProcMgr` + the `spell_proc` table. See [`spells/06-proc-system.md`](./spells/06-proc-system.md), full chain in [`../03-spell-system.md#proc-system--full-chain`](../03-spell-system.md).
+
+## Q
+
+- **`QueryHolder`** — Container that batches several prepared statements asynchronously and yields a future of results, used to avoid N round-trips on player login etc. See [`database/04-query-holders.md`](./database/04-query-holders.md).
+
+## R
+
+- **Realm** — A logical world cluster (one or more `worldserver` instances). Realms register themselves with `authserver` via the realmlist relay. See [`network/08-realmlist.md`](./network/08-realmlist.md).
+
+## S
+
+- **`ScriptMgr`** — Singleton that owns the registries of every `ScriptObject` subclass and dispatches hook calls. See [`scripting/01-script-mgr.md`](./scripting/01-script-mgr.md).
+- **`SmartAI` / SAI** — Data-driven AI executed from `smart_scripts` rows. See [`ai/03-smart-ai.md`](./ai/03-smart-ai.md).
+- **SRP6** — "Secure Remote Password" v6 protocol used during login. See [`network/06-auth-srp6.md`](./network/06-auth-srp6.md).
+- **`Spell`** — One transient cast in flight. `SpellInfo` is the static (DBC-derived) descriptor. See [`spells/01-cast-lifecycle.md`](./spells/01-cast-lifecycle.md), [`spells/02-spell-info.md`](./spells/02-spell-info.md).
+
+## T
+
+- **Threat** — Aggro value tracked per `(attacker, victim)` by `ThreatMgr`. See [`combat/02-threat-system.md`](./combat/02-threat-system.md).
+- **Transaction** — Multi-statement DB transaction obtained via `*Database.BeginTransaction()`. See [`database/05-transactions.md`](./database/05-transactions.md).
+
+## U
+
+- **Unit** — Object subclass with combat, movement, auras, threat. Parent of `Player`, `Creature`, `Pet`, `Vehicle`. See [`entities/01-object-hierarchy.md`](./entities/01-object-hierarchy.md).
+- **Update fields** — `Object::m_uint32Values` — the array of fields the client mirrors via `UpdateMask`. See [`entities/03-update-fields.md`](./entities/03-update-fields.md).
+
+## V
+
+- **VMaps** — Vector-collision data extracted from the client (line-of-sight, height). See [`maps/07-vmaps.md`](./maps/07-vmaps.md).
+- **`Vehicle`** — Unit subclass that owns seats; passengers are linked via `VehicleKit`. See [`entities/08-pet-vehicle.md`](./entities/08-pet-vehicle.md).
+
+## W
+
+- **Warden** — Anti-cheat memory/file checker that runs over an authenticated `WorldSession`. See [`network/07-warden.md`](./network/07-warden.md).
+- **`WorldPacket`** — `ByteBuffer` + opcode. The currency of all gameplay traffic. See [`network/02-worldpacket.md`](./network/02-worldpacket.md).
+- **`WorldSession`** — Per-connected-player state on the worldserver: opcode dispatch, queues, account info. See [`network/05-worldsession.md`](./network/05-worldsession.md).
+- **`World`** — Singleton that owns global config, weather, calendar, game-event timers, and drives the world tick. See [`world/01-world-singleton.md`](./world/01-world-singleton.md).

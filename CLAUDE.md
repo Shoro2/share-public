@@ -20,6 +20,7 @@ Central information base for AI assistants on the Custom WoW server (WotLK 3.3.5
 | [docs/08-ai-workflow.md](./docs/08-ai-workflow.md) | AI workflow, read/write strategy, logging duty |
 | [docs/09-db-tables.md](./docs/09-db-tables.md) | DB table inventory by category (Custom + AzerothCore) |
 | [docs/10-dbc-inventory.md](./docs/10-dbc-inventory.md) | DBC file inventory (246 files) by category |
+| [docs/core/00-INDEX.md](./docs/core/00-INDEX.md) | **AzerothCore engine reference** — internals & interfaces (signpost tree, ~25 small files, see [docs/core/04-reading-strategy.md](./docs/core/04-reading-strategy.md)) |
 
 ## Repo map
 
