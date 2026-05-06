@@ -89,11 +89,11 @@ client                                       server  (in WorldSession::Update)
 
 ## Hooks & extension points
 
-—  Warden has no `ScriptMgr` veto hook (compare `CanPacketReceive` for normal opcodes). Module authors who want to react to a Warden penalty observe player kicks/bans through the standard `OnPlayerKick` / `BanMgr` paths.
+—  Warden has no `ScriptMgr` veto hook. Module authors who want to react to a Warden penalty observe through the standard `BanMgr` path or by polling `WorldSession::GetWarden()`.
 
-To add a new check, insert a row into `acore_world.warden_checks` (id, type, data, result, address, length, str, comment) and reload the world. Lua-only checks live with `type = LUA_EVAL_CHECK` and four-digit IDs at most. Per-check action override goes into `warden_check_overrides`.
+To add a new check, insert a row into `acore_world.warden_checks` (id, type, data, result, address, length, str, comment) and reload the world. LUA checks (`type = LUA_EVAL_CHECK`) must use four-digit IDs. Per-check action override → `warden_check_overrides`.
 
-For dynamic Lua payloads at runtime (e.g., from a custom module), use `Warden::GetPayloadMgr()` (`Warden.cpp:315`) — the `WardenPayloadMgr` allocates IDs ≥ `WardenPayloadOffsetMin` so they don't collide with DB-loaded checks.
+Dynamic runtime Lua payloads (from a module) → `Warden::GetPayloadMgr()` (`Warden.cpp:315`); `WardenPayloadMgr` allocates IDs ≥ `WardenPayloadOffsetMin` to avoid DB collisions.
 
 ## Cross-references
 
